@@ -1,12 +1,26 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
+# Ignore all logfiles and tempfiles.
+/log/*.log
+/tmp
 
-# Test binary, build with `go test -c`
-*.test
+/.DS_Store
+/*/.DS_Store
+/*/*/.DS_Store
+/*/*/*/.DS_Store
+/*/*/*/*/.DS_Store
+/*/*/*/*/*/.DS_Store
+/.AppleDouble
+/*/.AppleDouble
+/*/*/.AppleDouble
+/*/*/*/.AppleDouble
+/*/*/*/*/.AppleDouble
+/*/*/*/*/*/.AppleDouble
+/*/*/*/*/*/*/.AppleDouble
+/*/*/*/*/*/*/*/.AppleDouble
+/*/*/*/*/*/*/*/*/.AppleDouble
 
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+# configs
+/templates/config/keys/app.key.rsa
+/templates/config/keys/app.key.rsa.pub
+/templates/config/app.yml
+/templates/config/database.yml
+/templates/config/email.yml
