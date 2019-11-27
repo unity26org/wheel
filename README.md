@@ -21,7 +21,7 @@ Wheel is a tool for creating and maintaining scalable and lightweight RESTful AP
 - [Log](http://wheel.unity26.org/features.html#log)
 
 
-See full documentation of default features at http://wheel.unity26.org/features
+See full documentation at http://wheel.unity26.org
 
 
 ## Install
