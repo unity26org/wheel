@@ -4,21 +4,21 @@ Wheel is a tool for creating and maintaining scalable and lightweight RESTful AP
 
 ## Features
 
-- [MVC](http://wheel.unity26.org/features#mvc)
-- [RESTful](http://wheel.unity26.org/features#restful)
-- [JWT](http://wheel.unity26.org/features#jwt)
-- [Session controller](http://wheel.unity26.org/features#session-controller)
-- [Middleware](http://wheel.unity26.org/features#middleware)
-- [Authorization](http://wheel.unity26.org/features#authorization)
-- [Users management](http://wheel.unity26.org/features#users-management)
-- [ORM](http://wheel.unity26.org/features#orm)
-- [Migration](http://wheel.unity26.org/features#migration)
-- [Search engine](http://wheel.unity26.org/features#search-engine)
-- [Pagination](http://wheel.unity26.org/features#pagination)
-- [Ordering](http://wheel.unity26.org/features#ordering)
-- [Sends email](http://wheel.unity26.org/features#sends-email)
-- [Internationalization (I18n)](http://wheel.unity26.org/features#i18n)
-- [Log](http://wheel.unity26.org/features#log)
+- [MVC](http://wheel.unity26.org/features.html#mvc)
+- [RESTful](http://wheel.unity26.org/features.html#restful)
+- [JWT](http://wheel.unity26.org/features.html#jwt)
+- [Session controller](http://wheel.unity26.org/features.html#session-controller)
+- [Middleware](http://wheel.unity26.org/features.html#middleware)
+- [Authorization](http://wheel.unity26.org/features.html#authorization)
+- [Users management](http://wheel.unity26.org/features.html#users-management)
+- [ORM](http://wheel.unity26.org/features.html#orm)
+- [Migration](http://wheel.unity26.org/features.html#migration)
+- [Search engine](http://wheel.unity26.org/features.html#search-engine)
+- [Pagination](http://wheel.unity26.org/features.html#pagination)
+- [Ordering](http://wheel.unity26.org/features.html#ordering)
+- [Sends email](http://wheel.unity26.org/features.html#sends-email)
+- [Internationalization (I18n)](http://wheel.unity26.org/features.html#i18n)
+- [Log](http://wheel.unity26.org/features.html#log)
 
 
 See full documentation of default features at http://wheel.unity26.org/features
