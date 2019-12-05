@@ -19,7 +19,7 @@ func (q *Query) Pagination(page interface{}, perPage interface{}) (int, int, int
 	currentPage = handleCurrentPage(page)
 	entriesPerPage = handleEntriesPerPage(perPage)
 
-	Db.Table(TableName(q.Table)).Order("", true).Select("COUNT(*) AS entries").Scan(&result)
+	q.Db.Table(TableName(q.Table)).Order("", true).Select("COUNT(*) AS entries").Scan(&result)
 
 	totalPages = result.Entries / entriesPerPage
 	if (result.Entries % entriesPerPage) > 0 {
