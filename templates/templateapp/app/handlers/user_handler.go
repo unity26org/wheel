@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"{{ .AppRepository }}/app/user"
 	"{{ .AppRepository }}/commons/app/handler"
-	"{{ .AppRepository }}/commons/app/model"
 	"{{ .AppRepository }}/commons/app/view"
 	"{{ .AppRepository }}/commons/log"
 	"{{ .AppRepository }}/db/entities"
@@ -17,13 +16,24 @@ import (
 	"regexp"
 )
 
+type UserPermittedParams struct {
+	Name     string ` + "`" + `json:"name"` + "`" + `
+	Email    string ` + "`" + `json:"email"` + "`" + `
+	Password string ` + "`" + `json:"password"` + "`" + `
+	Locale   string ` + "`" + `json:"locale"` + "`" + `
+	Admin    bool   ` + "`" + `json:"admin"` + "`" + `
+}
+
 func UserCreate(w http.ResponseWriter, r *http.Request) {
 	var newUser = entities.User{}
 
 	log.Info.Println("Handler: UserCreate")
 	w.Header().Set("Content-Type", "application/json")
 
-	userSetParams(&newUser, r)
+	var userParams UserPermittedParams
+	_ = json.NewDecoder(r.Body).Decode(&userParams)
+
+	handler.SetPermittedParamsToEntity(&userParams, &newUser)
 
 	valid, errs := user.Create(&newUser)
 
@@ -46,7 +56,15 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userSetParams(&userCurrent, r)
+	var userParams UserPermittedParams
+	_ = json.NewDecoder(r.Body).Decode(&userParams)
+
+	if userParams.Password == "" {
+		paramsExcept := []string{"Password"}
+		handler.SetPermittedParamsToEntityWithExceptions(&userParams, &userCurrent, paramsExcept)
+	} else {
+		handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
+	}
 
 	if valid, errs := user.Update(&userCurrent); valid {
 		json.NewEncoder(w).Encode(user.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "user was successfully updated"), User: user.SetJson(userCurrent)})
@@ -103,21 +121,6 @@ func UserList(w http.ResponseWriter, r *http.Request) {
 
 	pagination := view.MainPagination{CurrentPage: page, TotalPages: pages, TotalEntries: entries}
 	json.NewEncoder(w).Encode(user.PaginationJson{Pagination: pagination, Users: userJsons})
-}
-
-func userSetParams(userSet *entities.User, r *http.Request) {
-	var allowedParams = []string{"name", "email", "password", "admin", "locale"}
-
-	r.ParseMultipartForm(100 * 1024)
-
-	for key := range r.Form {
-		for _, allowedParam := range allowedParams {
-			if key == allowedParam {
-				model.SetColumnValue(userSet, allowedParam, r.FormValue(allowedParam))
-				break
-			}
-		}
-	}
 }
 
 func userSanitizeOrder(value string) string {

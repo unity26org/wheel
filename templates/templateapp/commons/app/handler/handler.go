@@ -6,11 +6,12 @@ var Content = `package handler
 
 import (
 	"encoding/json"
-	"net/http"
-	"regexp"
-	"strings"
 	"{{ .AppRepository }}/commons/app/view"
 	"{{ .AppRepository }}/commons/log"
+	"net/http"
+	"reflect"
+	"regexp"
+	"strings"
 )
 
 func ApiRoot(w http.ResponseWriter, r *http.Request) {
@@ -76,4 +77,64 @@ func QueryParamsToMapCriteria(param string, mapParams map[string][]string) map[s
 	}
 
 	return query
+}
+
+func SetPermittedParamsToEntity(params interface{}, entity interface{}) {
+	setPermittedParams(params, entity, []string{}, []string{})
+}
+
+func SetPermittedParamsToEntityWithExceptions(params interface{}, entity interface{}, excepts []string) {
+	setPermittedParams(params, entity, excepts, []string{})
+}
+
+func SetPermittedParamsToEntityButOnly(params interface{}, entity interface{}, only []string) {
+	setPermittedParams(params, entity, []string{}, only)
+}
+
+func setPermittedParams(params interface{}, entity interface{}, excepts []string, only []string) {
+	valParams := reflect.ValueOf(params).Elem()
+	valEntity := reflect.ValueOf(entity).Elem()
+	returnEntity := reflect.ValueOf(entity)
+
+	for i := 0; i < valParams.NumField(); i++ {
+		paramValueField := valParams.Field(i)
+		paramTypeField := valParams.Type().Field(i)
+
+		if !inExcept(excepts, paramTypeField.Name) && inOnly(only, paramTypeField.Name) {
+			for j := 0; j < valEntity.NumField(); j++ {
+				entityTypeField := valEntity.Type().Field(j)
+				if paramTypeField.Name == entityTypeField.Name {
+					returnEntity.Elem().Field(j).Set(paramValueField)
+				}
+			}
+		}
+	}
+}
+
+func inExcept(excepts []string, value string) bool {
+	if len(excepts) == 0 {
+		return false
+	} else {
+		for _, element := range excepts {
+			if value == element {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
+func inOnly(only []string, value string) bool {
+	if len(only) == 0 {
+		return true
+	} else {
+		for _, element := range only {
+			if value == element {
+				return true
+			}
+		}
+
+		return false
+	}
 }`

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"{{ .AppRepository }}/app/{{ .EntityName.LowerCase }}"
 	"{{ .AppRepository }}/commons/app/handler"
-	"{{ .AppRepository }}/commons/app/model"
 	"{{ .AppRepository }}/commons/app/view"
 	"{{ .AppRepository }}/commons/log"
 	"{{ .AppRepository }}/db/entities"
@@ -15,18 +14,26 @@ import (
 	"regexp"
 )
 
+type {{ .EntityName.CamelCase }}PermittedParams struct {
+  {{- $filteredEntityColumns := filterEntityColumnsNotForeignKeys .EntityColumns }}
+	{{- range $index, $element := $filteredEntityColumns }}
+  {{ $element.Name }} {{ $element.Type }} ` + "`" + `json:"{{ $element.NameSnakeCase }}"` + "`" + `{{- end }}
+}
+
 func {{ .EntityName.CamelCase }}Create(w http.ResponseWriter, r *http.Request) {
-	var new{{ .EntityName.CamelCase }} = entities.{{ .EntityName.CamelCase }}{}
+	var {{ .EntityName.LowerCamelCase }}New = entities.{{ .EntityName.CamelCase }}{}
 
 	log.Info.Println("Handler: {{ .EntityName.CamelCase }}Create")
 	w.Header().Set("Content-Type", "application/json")
 
-	{{ .EntityName.LowerCamelCase }}SetParams(&new{{ .EntityName.CamelCase }}, r)
+	var {{ .EntityName.LowerCamelCase }}Params {{ .EntityName.CamelCase }}PermittedParams
+	_ = json.NewDecoder(r.Body).Decode(&{{ .EntityName.LowerCamelCase }}Params)
+	handler.SetPermittedParamsToEntity(&{{ .EntityName.LowerCamelCase }}Params, &{{ .EntityName.LowerCamelCase }}New)
 
-	valid, errs := {{ .EntityName.LowerCase }}.Create(&new{{ .EntityName.CamelCase }})
+	valid, errs := {{ .EntityName.LowerCase }}.Create(&{{ .EntityName.LowerCamelCase }}New)
 
 	if valid {
-		json.NewEncoder(w).Encode({{ .EntityName.LowerCase }}.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "{{ .EntityName.SnakeCase }} was successfully created"), {{ .EntityName.CamelCase }}: {{ .EntityName.LowerCase }}.SetJson(new{{ .EntityName.CamelCase }})})
+		json.NewEncoder(w).Encode({{ .EntityName.LowerCase }}.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "{{ .EntityName.SnakeCase }} was successfully created"), {{ .EntityName.CamelCase }}: {{ .EntityName.LowerCase }}.SetJson({{ .EntityName.LowerCamelCase }}New)})
 	} else {
 		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "{{ .EntityName.SnakeCase }} was not created", errs))
 	}
@@ -44,7 +51,9 @@ func {{ .EntityName.CamelCase }}Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	{{ .EntityName.LowerCamelCase }}SetParams(&{{ .EntityName.LowerCamelCase }}Current, r)
+	var {{ .EntityName.LowerCamelCase }}Params {{ .EntityName.CamelCase }}PermittedParams
+	_ = json.NewDecoder(r.Body).Decode(&{{ .EntityName.LowerCamelCase }}Params)
+	handler.SetPermittedParamsToEntity(&{{ .EntityName.LowerCamelCase }}Params, &{{ .EntityName.LowerCamelCase }}Current)
 
 	if valid, errs := {{ .EntityName.LowerCase }}.Update(&{{ .EntityName.LowerCamelCase }}Current); valid {
 		json.NewEncoder(w).Encode({{ .EntityName.LowerCase }}.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "{{ .EntityName.SnakeCase }} was successfully updated"), {{ .EntityName.CamelCase }}: {{ .EntityName.LowerCase }}.SetJson({{ .EntityName.LowerCamelCase }}Current)})
@@ -101,22 +110,6 @@ func {{ .EntityName.CamelCase }}List(w http.ResponseWriter, r *http.Request) {
 
 	pagination := view.MainPagination{CurrentPage: page, TotalPages: pages, TotalEntries: entries}
 	json.NewEncoder(w).Encode({{ .EntityName.LowerCase }}.PaginationJson{Pagination: pagination, {{ .EntityName.CamelCasePlural }}: {{ .EntityName.LowerCamelCase }}Jsons})
-}
-
-func {{ .EntityName.LowerCamelCase }}SetParams({{ .EntityName.LowerCamelCase }}Set *entities.{{ .EntityName.CamelCase }}, r *http.Request) {
-  {{- $filteredEntityColumns := filterEntityColumnsNotForeignKeys .EntityColumns }}
-	var allowedParams = []string{ {{- range $index, $element := $filteredEntityColumns }} "{{ $element.NameSnakeCase }}" {{- if isNotLastIndex $index $filteredEntityColumns }}, {{- end }} {{- end }} }
-
-	r.ParseMultipartForm(100 * 1024)
-
-	for key := range r.Form {
-		for _, allowedParam := range allowedParams {
-			if key == allowedParam {
-				model.SetColumnValue({{ .EntityName.LowerCamelCase }}Set, allowedParam, r.FormValue(allowedParam))
-				break
-			}
-		}
-	}
 }
 
 func {{ .EntityName.LowerCamelCase }}SanitizeOrder(value string) string {

@@ -8,21 +8,27 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
-	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/satori/go.uuid"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"time"
 	"{{ .AppRepository }}/app/session"
 	"{{ .AppRepository }}/app/user"
+	"{{ .AppRepository }}/commons/app/handler"
 	"{{ .AppRepository }}/commons/app/view"
 	"{{ .AppRepository }}/commons/locale"
 	"{{ .AppRepository }}/commons/log"
 	"{{ .AppRepository }}/commons/mailer"
 	"{{ .AppRepository }}/config"
 	"{{ .AppRepository }}/db/entities"
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/satori/go.uuid"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"time"
 )
+
+type SessionSignInParams struct {
+	Email    string ` + "`" + `json:"email"` + "`" + `
+	Password string ` + "`" + `json:"password"` + "`" + `
+}
 
 type SessionClaims struct {
 	Uid uint   ` + "`" + `json:"uid"` + "`" + `
@@ -39,7 +45,10 @@ func SessionSignIn(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Handler: SessionSignIn")
 	w.Header().Set("Content-Type", "application/json")
 
-	userAuth, err := user.Authenticate(r.FormValue("email"), r.FormValue("password"))
+	var signInParams SessionSignInParams
+	_ = json.NewDecoder(r.Body).Decode(&signInParams)
+
+	userAuth, err := user.Authenticate(signInParams.Email, signInParams.Password)
 
 	if !user.IsNil(&userAuth) {
 		json.NewEncoder(w).Encode(session.SignInSuccessMessage("notice", "signed in successfully", sessionGenerateToken(userAuth, r.RemoteAddr)))
@@ -116,7 +125,10 @@ func SessionSignUp(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Handler: SessionSignUp")
 	w.Header().Set("Content-Type", "application/json")
 
-	userSetParams(&newUser, r)
+	var userParams UserPermittedParams
+	_ = json.NewDecoder(r.Body).Decode(&userParams)
+
+	handler.SetPermittedParamsToEntity(&userParams, &newUser)
 	newUser.Admin = false
 
 	if valid, errs := user.Save(&newUser); valid {
