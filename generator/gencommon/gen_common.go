@@ -61,57 +61,6 @@ type TemplateVar struct {
 
 var yesToAll = false
 
-func DirOrFileExists(fullPath string) bool {
-	_, err := os.Stat(fullPath)
-	return !os.IsNotExist(err)
-}
-
-func UpdateTextFile(content string, filePath string, fileName string) {
-	persistFile(content, filePath, fileName, "a")
-}
-
-func SaveTextFile(content string, filePath string, fileName string) {
-	persistFile(content, filePath, fileName, "w")
-}
-
-func persistFile(content string, filePath string, fileName string, pseudoMode string) {
-	err := os.MkdirAll(filePath, 0775)
-	notify.FatalIfError(err)
-
-	fullPath := filepath.Join(filePath, fileName)
-
-	f, err := os.Create(fullPath)
-	notify.FatalIfError(err)
-
-	defer f.Close()
-
-	_, err = f.WriteString(content)
-	notify.FatalIfError(err)
-
-	f.Sync()
-
-	fileutil.GoFmtFile(fullPath)
-
-	switch pseudoMode {
-	case "w":
-		notify.Created(fullPath)
-	case "a":
-		notify.Updated(fullPath)
-	case "i":
-		notify.Identical(fullPath)
-	case "f":
-		notify.Force(fullPath)
-	case "s":
-		notify.Skip(fullPath)
-	}
-
-}
-
-func DestroyDirOrFile(fullPath string) {
-	err := os.Remove(fullPath)
-	notify.FatalIfError(err)
-}
-
 func FmtNewContent(content string) string {
 	var fileName string
 
@@ -260,7 +209,7 @@ func GeneratePathAndFileFromTemplateString(path []string, content string, templa
 
 	content = GenerateFromTemplateString(content, templateVar)
 
-	if DirOrFileExists(fullPath) {
+	if fileutil.DirOrFileExists(fullPath) {
 		if FmtNewContent(content) == fileutil.ReadTextFile(filePath, fileName) {
 			pseudoMode = "i"
 		} else {
@@ -273,13 +222,13 @@ func GeneratePathAndFileFromTemplateString(path []string, content string, templa
 	} else if pseudoMode == "p" {
 		notify.Patch(fullPath)
 	} else {
-		persistFile(content, filePath, fileName, pseudoMode)
+		fileutil.PersistFile(content, filePath, fileName, pseudoMode)
 	}
 }
 
 func CreatePathAndFileFromTemplateString(path []string, content string, templateVar TemplateVar) {
 	fileName, filePath := path[len(path)-1], path[:len(path)-1]
-	SaveTextFile(content, sliceToPath(filePath), fileName)
+	fileutil.SaveTextFile(content, sliceToPath(filePath), fileName)
 }
 
 func GenerateRoutesNewCode(content string, templateVar TemplateVar) string {
@@ -335,7 +284,7 @@ func BuildRootAppPath(appRepository string) string {
 		path = filepath.Join(path, element)
 	}
 
-	if DirOrFileExists(path) {
+	if fileutil.DirOrFileExists(path) {
 		errDirOrFileExists := errors.New("directory \"" + path + "\" already exists\n")
 		notify.FatalIfError(errDirOrFileExists)
 	}
@@ -379,7 +328,7 @@ func GenerateCertificates(rootAppPath string) {
 			notify.Warn("Could not generate public certificate file. Check if openssl is installed and execute the command line below:")
 			notify.Warn("openssl rsa -in " + filepath.Join(rootAppPath, "config", "keys", "app.key.rsa") + " -pubout > " + filepath.Join(rootAppPath, "config", "keys", "app.key.rsa.pub"))
 		} else {
-			SaveTextFile(out.String(), filepath.Join(rootAppPath, "config", "keys"), "app.key.rsa.pub")
+			fileutil.SaveTextFile(out.String(), filepath.Join(rootAppPath, "config", "keys"), "app.key.rsa.pub")
 		}
 	}
 }

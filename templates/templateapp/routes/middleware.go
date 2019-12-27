@@ -7,6 +7,7 @@ var MiddlewareContent = `package routes
 import (
 	"bytes"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -20,8 +21,21 @@ import (
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Info.Println(r.Method + ": " + filterUrlValues(r.URL.Path, r.URL.Query()) + " for " + r.RemoteAddr)
-		r.ParseMultipartForm(100 * 1024)
-		log.Info.Println("Params: " + filterFormValues(r.Form))
+
+		if strings.Trim(r.Header.Get("Content-Type"), " \n") == "application/json" {
+			body, err := ioutil.ReadAll(r.Body)
+			if err == nil {
+				log.Info.Println("Body JSON:", filterJsonValues(string(body)))
+				// put the body content back
+				r.Body = ioutil.NopCloser(strings.NewReader(string(body)))
+			} else {
+				log.Error.Println("loggingMiddlware: ", err)
+			}
+		} else {
+			r.ParseMultipartForm(100 * 1024)
+			log.Info.Println("Form-data: " + filterFormValues(r.Form))
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -171,4 +185,78 @@ func filterFormValues(queries map[string][]string) string {
 	buffer.WriteString(" }")
 
 	return buffer.String()
+}
+
+func filterJsonValues(inputJson string) string {
+	type Point struct {
+		StartAt int
+		EndAt   int
+	}
+
+	var filter = regexp.MustCompile(` + "`" + `(?i)(password)|(token)` + "`" + `)
+	var regexpWhiteSpace = regexp.MustCompile(` + "`" + `[\s\t\n]{1}` + "`" + `)
+	var stack []string
+	var key, currentChar string
+	var valueStartAt, valueEndAt, keyStartAt, keyEndAt int
+	var points []Point
+
+	substring := []rune(inputJson)
+	isCharBeforeEscape := false
+	isKey := false
+	isValue := false
+
+	for i := 0; i < len(inputJson); i++ {
+		currentChar = string(inputJson[i])
+
+		if regexpWhiteSpace.MatchString(currentChar) && (len(stack) == 0 || stack[len(stack)-1] != ` + "`" + `"` + "`" + ` || stack[len(stack)-1] == ` + "`" + `:` + "`" + `) {
+			currentChar = currentChar
+		} else if currentChar == "{" && (len(stack) == 0 || stack[len(stack)-1] == "{") {
+			stack = append(stack, "{")
+		} else if currentChar == ":" && (len(stack) == 0 || stack[len(stack)-1] == "{") {
+			stack = append(stack, ":")
+		} else if currentChar == "}" && (len(stack) > 0 && stack[len(stack)-1] == "{") {
+			stack = stack[:len(stack)-1]
+		} else if currentChar == ` + "`" + `"` + "`" + ` && (len(stack) > 0 && stack[len(stack)-1] == ":") && !isCharBeforeEscape {
+			stack = stack[:len(stack)-1]
+			stack = append(stack, ` + "`" + `"` + "`" + `)
+			isValue = true
+			isKey = false
+			valueStartAt = i + 1
+		} else if currentChar == ` + "`" + `"` + "`" + ` && (len(stack) > 0 && stack[len(stack)-1] == ` + "`" + `"` + "`" + `) && isValue && !isCharBeforeEscape {
+			stack = stack[:len(stack)-1]
+			isValue = false
+			isKey = false
+			valueEndAt = i
+
+			if filter.MatchString(key) {
+				points = append(points, Point{StartAt: valueStartAt, EndAt: valueEndAt})
+			}
+		} else if currentChar == ` + "`" + `"` + "`" + ` && (len(stack) > 0 && stack[len(stack)-1] == "{") && !isCharBeforeEscape {
+			isKey = true
+			isValue = false
+			stack = append(stack, ` + "`" + `"` + "`" + `)
+			keyStartAt = i + 1
+		} else if currentChar == ` + "`" + `"` + "`" + ` && (len(stack) > 0 && stack[len(stack)-1] == ` + "`" + `"` + "`" + `) && isKey && !isCharBeforeEscape {
+			isKey = false
+			isValue = false
+			stack = stack[:len(stack)-1]
+			keyEndAt = i
+			key = string(substring[keyStartAt:keyEndAt])
+		}
+
+		if currentChar == ` + "`" + `\` + "`" + ` && (len(stack) > 0 && stack[len(stack)-1] == ` + "`" + `"` + "`" + `) {
+			isCharBeforeEscape = true
+		} else if isCharBeforeEscape {
+			isCharBeforeEscape = false
+		}
+	}
+
+	if len(points) > 0 {
+		for i := len(points) - 1; i >= 0; i-- {
+			inputJson = string(substring[0:points[i].StartAt]) + "[FILTERED]" + string(substring[points[i].EndAt:len(inputJson)])
+			substring = []rune(inputJson)
+		}
+	}
+
+	return inputJson
 }`

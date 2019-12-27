@@ -220,6 +220,5 @@ func main() {
 	} else {
 		notify.ErrorJustified("invalid argument. Use \"new\" or \"generate\". Run \"wheel --help\" for details", 0)
 		handleHelp()
-		notify.Fatal("")
 	}
 }

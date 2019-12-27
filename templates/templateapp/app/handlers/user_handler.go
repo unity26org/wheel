@@ -25,7 +25,7 @@ type UserPermittedParams struct {
 }
 
 func UserCreate(w http.ResponseWriter, r *http.Request) {
-	var newUser = entities.User{}
+	var userNew = entities.User{}
 
 	log.Info.Println("Handler: UserCreate")
 	w.Header().Set("Content-Type", "application/json")
@@ -33,12 +33,12 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	var userParams UserPermittedParams
 	_ = json.NewDecoder(r.Body).Decode(&userParams)
 
-	handler.SetPermittedParamsToEntity(&userParams, &newUser)
+	handler.SetPermittedParamsToEntity(&userParams, &userNew)
 
-	valid, errs := user.Create(&newUser)
+	valid, errs := user.Create(&userNew)
 
 	if valid {
-		json.NewEncoder(w).Encode(user.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "user was successfully created"), User: user.SetJson(newUser)})
+		json.NewEncoder(w).Encode(user.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "user was successfully created"), User: user.SetJson(userNew)})
 	} else {
 		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user was not created", errs))
 	}

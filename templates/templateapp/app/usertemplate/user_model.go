@@ -173,7 +173,7 @@ func FindByResetPasswordToken(token string) (entities.User, error) {
 	return user, err
 }
 
-func Paginate(criteria map[string]string, order string, page interface{}, perPage interface{}) ([]entities.User, int, int, int) {
+func Paginate(criteria map[string]string, order, page, perPage string) ([]entities.User, int, int, int) {
 	var users []entities.User
 	var user entities.User
 

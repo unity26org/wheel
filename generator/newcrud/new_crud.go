@@ -59,7 +59,7 @@ func setMigrate() {
 	} else if newFullCode == "" {
 		notify.Identical(filepath.Join(".", "db", "schema", "migrate.go"))
 	} else {
-		gencommon.UpdateTextFile(newFullCode, filepath.Join(".", "db", "schema"), "migrate.go")
+		fileutil.UpdateTextFile(newFullCode, filepath.Join(".", "db", "schema"), "migrate.go")
 	}
 }
 
@@ -81,7 +81,7 @@ func setRoutes(options map[string]bool) {
 	} else if newFullCode == "" {
 		notify.Identical(filepath.Join(".", "routes", "routes.go"))
 	} else {
-		gencommon.UpdateTextFile(newFullCode, filepath.Join(".", "routes"), "routes.go")
+		fileutil.UpdateTextFile(newFullCode, filepath.Join(".", "routes"), "routes.go")
 	}
 }
 
@@ -102,7 +102,7 @@ func setAuthorize(options map[string]bool) {
 	} else if newFullCode == "" {
 		notify.Identical(filepath.Join(".", "routes", "authorize.go"))
 	} else {
-		gencommon.UpdateTextFile(newFullCode, filepath.Join(".", "routes"), "authorize.go")
+		fileutil.UpdateTextFile(newFullCode, filepath.Join(".", "routes"), "authorize.go")
 	}
 }
 

@@ -103,7 +103,7 @@ func Destroy({{ .EntityName.LowerCamelCase }} *entities.{{ .EntityName.CamelCase
 	}
 }
 
-func Paginate(criteria map[string]string, order string, page interface{}, perPage interface{}) ([]entities.{{ .EntityName.CamelCase }}, int, int, int) {
+func Paginate(criteria map[string]string, order, page, perPage string) ([]entities.{{ .EntityName.CamelCase }}, int, int, int) {
 	var {{ .EntityName.LowerCamelCasePlural }} []entities.{{ .EntityName.CamelCase }}
 	var {{ .EntityName.LowerCamelCase }} entities.{{ .EntityName.CamelCase }}
 
