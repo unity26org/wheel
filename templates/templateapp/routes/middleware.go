@@ -51,7 +51,7 @@ func authorizeMiddleware(next http.Handler) http.Handler {
 		err = nil
 		userRole = "public"
 
-		userId, err = checkToken(r.Header.Get("token"))
+		userId, err = checkToken(r.Header.Get("Authorization"))
 		if err == nil {
 			if signedInUser, err = checkSignedInUser(userId); err == nil {
 				userRole = "signed_in"

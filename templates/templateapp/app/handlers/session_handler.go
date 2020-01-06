@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"regexp"
 	"time"
 )
 
@@ -61,7 +62,7 @@ func SessionSignOut(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Handler: SessionSignOut")
 	w.Header().Set("Content-Type", "application/json")
 
-	authToken, _ := sessionAuthToken(r.Header.Get("token"))
+	authToken, _ := sessionAuthToken(r.Header.Get("Authorization"))
 
 	claims, ok := authToken.Claims.(*SessionClaims)
 	if !ok || !authToken.Valid {
@@ -86,7 +87,7 @@ func SessionRefresh(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Handler: SessionRefresh")
 	w.Header().Set("Content-Type", "application/json")
 
-	authToken, _ := sessionAuthToken(r.Header.Get("token"))
+	authToken, _ := sessionAuthToken(r.Header.Get("Authorization"))
 
 	claims, ok := authToken.Claims.(*SessionClaims)
 	if !ok || !authToken.Valid {
@@ -236,6 +237,9 @@ func sessionAuthToken(token string) (*jwt.Token, error) {
 
 	if token == "" {
 		return authToken, errors.New("invalid token")
+	} else {
+		removeBearer := regexp.MustCompile(` + "`" + `^\s*Bearer\s+` + "`" + `)
+		token = removeBearer.ReplaceAllString(token, "")
 	}
 
 	publicBytes, errorReadFile = ioutil.ReadFile(publicKeyPath)

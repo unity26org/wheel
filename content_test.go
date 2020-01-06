@@ -157,7 +157,7 @@ func authorizeMiddleware(next http.Handler) http.Handler {
 		err = nil
 		userRole = "public"
 
-		userId, err = checkToken(r.Header.Get("token"))
+		userId, err = checkToken(r.Header.Get("Authorization"))
 		if err == nil {
 			if signedInUser, err = checkSignedInUser(userId); err == nil {
 				userRole = "signed_in"
@@ -2360,6 +2360,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+  "regexp"
 	"test_repository_hub.com/test_account/test_project/app/session"
 	"test_repository_hub.com/test_account/test_project/app/user"
 	"test_repository_hub.com/test_account/test_project/commons/app/handler"
@@ -2408,7 +2409,7 @@ func SessionSignOut(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Handler: SessionSignOut")
 	w.Header().Set("Content-Type", "application/json")
 
-	authToken, _ := sessionAuthToken(r.Header.Get("token"))
+	authToken, _ := sessionAuthToken(r.Header.Get("Authorization"))
 
 	claims, ok := authToken.Claims.(*SessionClaims)
 	if !ok || !authToken.Valid {
@@ -2433,7 +2434,7 @@ func SessionRefresh(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Handler: SessionRefresh")
 	w.Header().Set("Content-Type", "application/json")
 
-	authToken, _ := sessionAuthToken(r.Header.Get("token"))
+	authToken, _ := sessionAuthToken(r.Header.Get("Authorization"))
 
 	claims, ok := authToken.Claims.(*SessionClaims)
 	if !ok || !authToken.Valid {
@@ -2583,6 +2584,9 @@ func sessionAuthToken(token string) (*jwt.Token, error) {
 
 	if token == "" {
 		return authToken, errors.New("invalid token")
+	} else {
+		removeBearer := regexp.MustCompile(` + "`" + `^\s*Bearer\s+` + "`" + `)
+		token = removeBearer.ReplaceAllString(token, "")
 	}
 
 	publicBytes, errorReadFile = ioutil.ReadFile(publicKeyPath)

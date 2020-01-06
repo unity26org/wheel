@@ -203,11 +203,9 @@ func TestMain(t *testing.T) {
 	for _, fileDir := range wheelFileSystems {
 		if fileDir.Type == "FILE" && fileDir.Content != nil {
 			basePath, fileName := buildPath(testAppPath, fileDir.Path)
-			fileContent := strings.Trim(fileutil.ReadTextFile(basePath, fileName), " \n")
-			varContent := strings.Trim(*fileDir.Content, " \n")
 
-			if fileContent != varContent {
-				diffError := diff.Diff(varContent, basePath, fileName, true)
+			diffError := diff.Diff(*fileDir.Content, basePath, fileName, true)
+			if diffError != "" {
 				t.Errorf("generated file %s is diffent from expected\nDIFF:\n\n%s", filepath.Join(basePath, fileName), diffError)
 			}
 		}
