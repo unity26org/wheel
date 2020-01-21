@@ -10,6 +10,7 @@ import (
 	"github.com/unity26org/wheel/version"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -107,6 +108,11 @@ func handleNewApp(args []string) {
 	generator.NewApp(options)
 }
 
+func isResourceNameValid(name string) bool {
+	var regexpInvalidChar = regexp.MustCompile(`[^\w]`)
+	return !regexpInvalidChar.MatchString(name)
+}
+
 func buildGenerateOptions(args []string) (map[string]bool, error) {
 	var options = make(map[string]bool)
 	var subject string
@@ -131,24 +137,27 @@ func buildGenerateOptions(args []string) (map[string]bool, error) {
 		options["routes"] = true
 		options["migrate"] = true
 		options["authorize"] = true
-		if len(args) < 4 {
+		if len(args) < 4 || !isResourceNameValid(args[3]) {
 			err = errors.New("invalid scaffold name")
 		}
 	case "model":
 		options["model"] = true
 		options["entity"] = true
 		options["migrate"] = true
-		if len(args) < 4 {
+		if len(args) < 4 || !isResourceNameValid(args[3]) {
 			err = errors.New("invalid model name")
 		}
 	case "handler":
 		options["handler"] = true
 		options["routes"] = true
 		options["authorize"] = true
+		if len(args) < 4 || !isResourceNameValid(args[3]) {
+			err = errors.New("invalid handler name")
+		}
 	case "entity":
 		options["entity"] = true
 		options["migrate"] = true
-		if len(args) < 4 {
+		if len(args) < 4 || !isResourceNameValid(args[3]) {
 			err = errors.New("invalid entity name")
 		}
 	default:
