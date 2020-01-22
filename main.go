@@ -55,9 +55,11 @@ func CheckDependences() {
 			cmd := exec.Command("go", "get", requiredDependence)
 			cmd.Stdout = &out
 			err := cmd.Run()
-			notify.FatalIfError(err)
-
-			notify.Simpleln(fmt.Sprintf("         package %s was successfully installed", requiredDependence))
+			if err != nil {
+				notify.FatalIfError(err)
+			} else {
+				notify.Simpleln(fmt.Sprintf("         package %s was successfully installed", requiredDependence))
+			}
 		} else {
 			notify.Simpleln(fmt.Sprintf("         package %s was found", requiredDependence))
 		}
@@ -96,16 +98,16 @@ func handleNewApp(args []string) {
 	if !optionsAreValid(args) {
 		err := errors.New("invalid option. Run \"wheel --help\" for details")
 		notify.FatalIfError(err)
+	} else {
+		preOptions := strings.Split(os.Args[2], "/")
+
+		options["app_name"] = preOptions[len(preOptions)-1]
+		options["app_repository"] = os.Args[2]
+		options["git_ignore"] = checkGitIgnore(os.Args)
+
+		notify.Simpleln("Generating new app...")
+		generator.NewApp(options)
 	}
-
-	preOptions := strings.Split(os.Args[2], "/")
-
-	options["app_name"] = preOptions[len(preOptions)-1]
-	options["app_repository"] = os.Args[2]
-	options["git_ignore"] = checkGitIgnore(os.Args)
-
-	notify.Simpleln("Generating new app...")
-	generator.NewApp(options)
 }
 
 func isResourceNameValid(name string) bool {
@@ -118,7 +120,11 @@ func buildGenerateOptions(args []string) (map[string]bool, error) {
 	var subject string
 	var err error
 
-	subject = args[2]
+	if len(args) > 2 {
+		subject = args[2]
+	} else {
+		subject = "invalid_subject"
+	}
 
 	options["model"] = false
 	options["entity"] = false
@@ -187,9 +193,11 @@ func handleGenerate(args []string) {
 	var err error
 
 	options, err = buildGenerateOptions(args)
-	notify.FatalIfError(err)
-
-	handleGenerateNewCrud(args, options)
+	if err != nil {
+		notify.FatalIfError(err)
+	} else {
+		handleGenerateNewCrud(args, options)
+	}
 }
 
 func handleHelp() {

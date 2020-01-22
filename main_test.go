@@ -84,6 +84,150 @@ func TestMainNewInvalidArgument(t *testing.T) {
 	}
 }
 
+func TestMainGenerateInvalidResources(t *testing.T) {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		t.Errorf("could not get current directory")
+	}
+
+	currentUser, err := user.Current()
+	if err != nil {
+		t.Errorf("could not get current user")
+	}
+
+	goPath := filepath.Join(currentUser.HomeDir, "go", "src")
+
+	destroyTestRepositoryDir(filepath.Join(goPath, "test_repository_hub.com", "test_account", "test_generate_error"))
+
+	os.Chdir(filepath.Join(goPath, "test_repository_hub.com", "test_account", "test_generate_error"))
+
+	rescueStdout := os.Stdout
+
+	// invalid scaffold name - ausence of name
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate", "scaffold"}
+	main()
+	w.Close()
+	out, _ := ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid scaffold name") {
+		t.Errorf("Not printing \"invalid scaffold name\"")
+	}
+
+	// invalid scaffold name - invalid name
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate", "scaffold", "name:string"}
+	main()
+	w.Close()
+	out, _ = ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid scaffold name") {
+		t.Errorf("Not printing \"invalid scaffold name\"")
+	}
+
+	// invalid model name - ausence of name
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate", "model"}
+	main()
+	w.Close()
+	out, _ = ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid model name") {
+		t.Errorf("Not printing \"invalid model name\"")
+	}
+
+	// invalid model name - invalid name
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate", "model", "name:string"}
+	main()
+	w.Close()
+	out, _ = ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid model name") {
+		t.Errorf("Not printing \"invalid model name\"")
+	}
+
+	// invalid handler name - ausence of name
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate", "handler"}
+	main()
+	w.Close()
+	out, _ = ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid handler name") {
+		t.Errorf("Not printing \"invalid handler name\"")
+	}
+
+	// invalid handler name - invalid name
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate", "handler", "name:string"}
+	main()
+	w.Close()
+	out, _ = ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid handler name") {
+		t.Errorf("Not printing \"invalid handler name\"")
+	}
+
+	// entity entity name - ausence of name
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate", "entity"}
+	main()
+	w.Close()
+	out, _ = ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid entity name") {
+		t.Errorf("Not printing \"entity entity name\"")
+	}
+
+	// invalid entity name - invalid name
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate", "entity", "name:string"}
+	main()
+	w.Close()
+	out, _ = ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid entity name") {
+		t.Errorf("Not printing \"invalid entity name\"")
+	}
+
+	// invalid subject - ausence
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate"}
+	main()
+	w.Close()
+	out, _ = ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid generate subject") {
+		t.Errorf("Not printing \"invalid generate subject\"")
+	}
+
+	// invalid subject - invalid
+	r, w, _ = os.Pipe()
+	os.Stdout = w
+	os.Args = []string{"wheel", "generate", "invalid_subject"}
+	main()
+	w.Close()
+	out, _ = ioutil.ReadAll(r)
+	os.Stdout = rescueStdout
+	if !strings.Contains(string(out), "invalid generate subject") {
+		t.Errorf("Not printing \"invalid generate subject\"")
+	}
+
+	os.Chdir(currentDir)
+
+	destroyTestRepositoryDir(filepath.Join(goPath, "test_repository_hub.com", "test_account", "test_generate_error"))
+}
+
 func TestMain(t *testing.T) {
 	var wheelFileSystems []WheelFileSystem
 
@@ -219,126 +363,6 @@ func TestMain(t *testing.T) {
 	os.Chdir(currentDir)
 
 	// destroyTestRepositoryDir(filepath.Join(goPath, "test_repository_hub.com"))
-}
-
-func TestMainGenerateInvalidResources(t *testing.T) {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		t.Errorf("could not get current directory")
-	}
-
-	currentUser, err := user.Current()
-	if err != nil {
-		t.Errorf("could not get current user")
-	}
-
-	goPath := filepath.Join(currentUser.HomeDir, "go", "src")
-
-	destroyTestRepositoryDir(filepath.Join(goPath, "test_repository_hub.com", "test_account", "test_generate_error"))
-
-	os.Chdir(filepath.Join(goPath, "test_repository_hub.com", "test_account", "test_generate_error"))
-
-	rescueStdout := os.Stdout
-
-	// invalid scaffold name - ausence of name
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-	os.Args = []string{"wheel", "generate", "scaffold"}
-	main()
-	w.Close()
-	out, _ := ioutil.ReadAll(r)
-	os.Stdout = rescueStdout
-	if !strings.Contains(string(out), "invalid scaffold name") {
-		t.Errorf("Not printing \"invalid scaffold name\"")
-	}
-
-	// invalid scaffold name - invalid name
-	r, w, _ = os.Pipe()
-	os.Stdout = w
-	os.Args = []string{"wheel", "generate", "scaffold", "name:string"}
-	main()
-	w.Close()
-	out, _ = ioutil.ReadAll(r)
-	os.Stdout = rescueStdout
-	if !strings.Contains(string(out), "invalid scaffold name") {
-		t.Errorf("Not printing \"invalid scaffold name\"")
-	}
-
-	// invalid model name - ausence of name
-	r, w, _ = os.Pipe()
-	os.Stdout = w
-	os.Args = []string{"wheel", "generate", "model"}
-	main()
-	w.Close()
-	out, _ = ioutil.ReadAll(r)
-	os.Stdout = rescueStdout
-	if !strings.Contains(string(out), "invalid model name") {
-		t.Errorf("Not printing \"invalid model name\"")
-	}
-
-	// invalid model name - invalid name
-	r, w, _ = os.Pipe()
-	os.Stdout = w
-	os.Args = []string{"wheel", "generate", "model", "name:string"}
-	main()
-	w.Close()
-	out, _ = ioutil.ReadAll(r)
-	os.Stdout = rescueStdout
-	if !strings.Contains(string(out), "invalid model name") {
-		t.Errorf("Not printing \"invalid model name\"")
-	}
-
-	// invalid handler name - ausence of name
-	r, w, _ = os.Pipe()
-	os.Stdout = w
-	os.Args = []string{"wheel", "generate", "handler"}
-	main()
-	w.Close()
-	out, _ = ioutil.ReadAll(r)
-	os.Stdout = rescueStdout
-	if !strings.Contains(string(out), "invalid handler name") {
-		t.Errorf("Not printing \"invalid handler name\"")
-	}
-
-	// invalid handler name - invalid name
-	r, w, _ = os.Pipe()
-	os.Stdout = w
-	os.Args = []string{"wheel", "generate", "handler", "name:string"}
-	main()
-	w.Close()
-	out, _ = ioutil.ReadAll(r)
-	os.Stdout = rescueStdout
-	if !strings.Contains(string(out), "invalid handler name") {
-		t.Errorf("Not printing \"invalid handler name\"")
-	}
-
-	// entity entity name - ausence of name
-	r, w, _ = os.Pipe()
-	os.Stdout = w
-	os.Args = []string{"wheel", "generate", "entity"}
-	main()
-	w.Close()
-	out, _ = ioutil.ReadAll(r)
-	os.Stdout = rescueStdout
-	if !strings.Contains(string(out), "invalid entity name") {
-		t.Errorf("Not printing \"entity entity name\"")
-	}
-
-	// invalid entity name - invalid name
-	r, w, _ = os.Pipe()
-	os.Stdout = w
-	os.Args = []string{"wheel", "generate", "entity", "name:string"}
-	main()
-	w.Close()
-	out, _ = ioutil.ReadAll(r)
-	os.Stdout = rescueStdout
-	if !strings.Contains(string(out), "invalid entity name") {
-		t.Errorf("Not printing \"invalid entity name\"")
-	}
-
-	os.Chdir(currentDir)
-
-	destroyTestRepositoryDir(filepath.Join(goPath, "test_repository_hub.com", "test_account", "test_generate_error"))
 }
 
 func destroyTestRepositoryDir(path string) {
