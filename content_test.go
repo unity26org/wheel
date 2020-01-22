@@ -1508,6 +1508,7 @@ func Error403(w http.ResponseWriter, r *http.Request) {
 func Error404(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Handler: Error404")
 	w.Header().Set("Content-Type", "application/json")
+  w.WriteHeader(404)
 
 	json.NewEncoder(w).Encode(view.SetNotFoundErrorMessage())
 }
