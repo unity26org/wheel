@@ -2194,6 +2194,7 @@ type Json struct {
 	ID        uint      ` + "`" + `json:"id"` + "`" + `
 	Name      string    ` + "`" + `json:"name"` + "`" + `
 	Email     string    ` + "`" + `json:"email"` + "`" + `
+	Locale    string    ` + "`" + `json:"locale"` + "`" + `
 	CreatedAt time.Time ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt time.Time ` + "`" + `json:"updated_at"` + "`" + `
 }
@@ -2203,6 +2204,7 @@ func SetJson(userMyself entities.User) Json {
 		ID:        userMyself.ID,
 		Name:      userMyself.Name,
 		Email:     userMyself.Email,
+		Locale:    userMyself.Locale,
 		CreatedAt: userMyself.CreatedAt,
 		UpdatedAt: userMyself.UpdatedAt,
 	}
@@ -2654,19 +2656,32 @@ import (
 	"net/http"
 	"test_repository_hub.com/test_account/test_project/app/myself"
 	"test_repository_hub.com/test_account/test_project/app/user"
-	"test_repository_hub.com/test_account/test_project/commons/app/model"
+	"test_repository_hub.com/test_account/test_project/commons/app/handler"
 	"test_repository_hub.com/test_account/test_project/commons/app/view"
 	"test_repository_hub.com/test_account/test_project/commons/log"
-	"test_repository_hub.com/test_account/test_project/db/entities"
 )
 
 func MyselfUpdate(w http.ResponseWriter, r *http.Request) {
+	type MyselfPermittedParams struct {
+		Name   string ` + "`" + `json:"name"` + "`" + `
+		Locale string ` + "`" + `json:"locale"` + "`" + `
+	}
+
 	log.Info.Println("Handler: MyselfUpdate")
 	w.Header().Set("Content-Type", "application/json")
 
 	userMyself := user.Current
 
-	myselfSetParams(&userMyself, r)
+	var myselfParams MyselfPermittedParams
+	err := json.NewDecoder(r.Body).Decode(&myselfParams)
+	if err != nil {
+		log.Error.Println("could not parser input JSON")
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "could not parser input JSON", []error{err}))
+		return
+	}
+
+	handler.SetPermittedParamsToEntity(&myselfParams, &userMyself)
 
 	if valid, errs := user.Save(&userMyself); valid {
 		json.NewEncoder(w).Encode(view.SetDefaultMessage("notice", "user was successfully updated"))
@@ -2676,6 +2691,11 @@ func MyselfUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func MyselfUpdatePassword(w http.ResponseWriter, r *http.Request) {
+	type MyselfPasswordParams struct {
+		Password             string ` + "`" + `json:"password"` + "`" + `
+		PasswordConfirmation string ` + "`" + `json:"password_confirmation"` + "`" + `
+	}
+
 	var errs []error
 	var valid bool
 
@@ -2683,11 +2703,21 @@ func MyselfUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	userMyself := user.Current
-	userMyself.Password = r.FormValue("new_password")
+
+	var myselfParams MyselfPasswordParams
+	err := json.NewDecoder(r.Body).Decode(&myselfParams)
+	if err != nil {
+		log.Error.Println("could not parser input JSON")
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "could not parser input JSON", []error{err}))
+		return
+	}
+
+	userMyself.Password = myselfParams.Password
 
 	if !user.Exists(&userMyself) {
 		errs = append(errs, errors.New("invalid user"))
-	} else if r.FormValue("new_password") != r.FormValue("password_confirmation") {
+	} else if myselfParams.Password != myselfParams.PasswordConfirmation {
 		errs = append(errs, errors.New("password confirmation does not match new password"))
 	} else if valid, errs = user.Save(&userMyself); valid {
 		json.NewEncoder(w).Encode(view.SetDefaultMessage("notice", "password was successfully changed"))
@@ -2716,21 +2746,6 @@ func MyselfShow(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	json.NewEncoder(w).Encode(myself.SetJson(user.Current))
-}
-
-func myselfSetParams(userMyself *entities.User, r *http.Request) {
-	var allowedParams = []string{"name", "locale"}
-
-	r.ParseMultipartForm(100 * 1024)
-
-	for key := range r.Form {
-		for _, allowedParam := range allowedParams {
-			if key == allowedParam {
-				model.SetColumnValue(userMyself, allowedParam, r.FormValue(allowedParam))
-				break
-			}
-		}
-	}
 }`
 
 var dbEntitySessionContent = `package entities
