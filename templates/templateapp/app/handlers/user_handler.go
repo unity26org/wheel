@@ -16,15 +16,15 @@ import (
 	"regexp"
 )
 
-type UserPermittedParams struct {
-	Name     string ` + "`" + `json:"name"` + "`" + `
-	Email    string ` + "`" + `json:"email"` + "`" + `
-	Password string ` + "`" + `json:"password"` + "`" + `
-	Locale   string ` + "`" + `json:"locale"` + "`" + `
-	Admin    bool   ` + "`" + `json:"admin"` + "`" + `
-}
-
 func UserCreate(w http.ResponseWriter, r *http.Request) {
+  type UserPermittedParams struct {
+  	Name     string ` + "`" + `json:"name"` + "`" + `
+  	Email    string ` + "`" + `json:"email"` + "`" + `
+  	Password string ` + "`" + `json:"password"` + "`" + `
+  	Locale   string ` + "`" + `json:"locale"` + "`" + `
+  	Admin    bool   ` + "`" + `json:"admin"` + "`" + `
+  }
+
 	var userNew = entities.User{}
 
 	log.Info.Println("Handler: UserCreate")
@@ -45,6 +45,13 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func UserUpdate(w http.ResponseWriter, r *http.Request) {
+  type UserPermittedParams struct {
+  	Name     string ` + "`" + `json:"name"` + "`" + `
+  	Email    string ` + "`" + `json:"email"` + "`" + `
+  	Locale   string ` + "`" + `json:"locale"` + "`" + `
+  	Admin    bool   ` + "`" + `json:"admin"` + "`" + `
+  }
+
 	log.Info.Println("Handler: UserUpdate")
 	w.Header().Set("Content-Type", "application/json")
 
@@ -59,12 +66,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	var userParams UserPermittedParams
 	_ = json.NewDecoder(r.Body).Decode(&userParams)
 
-	if userParams.Password == "" {
-		paramsExcept := []string{"Password"}
-		handler.SetPermittedParamsToEntityWithExceptions(&userParams, &userCurrent, paramsExcept)
-	} else {
-		handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
-	}
+	handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
 
 	if valid, errs := user.Update(&userCurrent); valid {
 		json.NewEncoder(w).Encode(user.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "user was successfully updated"), User: user.SetJson(userCurrent)})
@@ -72,6 +74,35 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user was not updated", errs))
 	}
 }
+
+func UserUpdatePassword(w http.ResponseWriter, r *http.Request) {
+  type UserPermittedParams struct {
+  	Password             string ` + "`" + `json:"password"` + "`" + `
+  }
+
+	log.Info.Println("Handler: UserUpdate")
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+
+	userCurrent, err := user.Find(params["id"])
+	if err != nil {
+		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user password was not updated", []error{err}))
+		return
+	}
+
+	var userParams UserPermittedParams
+	_ = json.NewDecoder(r.Body).Decode(&userParams)
+
+	handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
+
+	if valid, errs := user.Update(&userCurrent); valid {
+		json.NewEncoder(w).Encode(user.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "user password was successfully updated"), User: user.SetJson(userCurrent)})
+	} else {
+		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user password was not updated", errs))
+	}
+}
+
 
 func UserDestroy(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Handler: UserDestroy")

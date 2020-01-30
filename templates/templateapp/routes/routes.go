@@ -45,6 +45,7 @@ func Routes(host string, port string) *mux.Router {
 	router.HandleFunc("/users/{id}", handlers.UserShow).Methods("GET")
 	router.HandleFunc("/users", handlers.UserCreate).Methods("POST")
 	router.HandleFunc("/users/{id}", handlers.UserUpdate).Methods("PUT")
+	router.HandleFunc("/users/{id}/password", handlers.UserUpdatePassword).Methods("PUT")
 	router.HandleFunc("/users/{id}", handlers.UserDestroy).Methods("DELETE")
 
 	return router
