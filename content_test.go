@@ -103,6 +103,7 @@ func Routes(host string, port string) *mux.Router {
 	router.HandleFunc("/users/{id}", handlers.UserShow).Methods("GET")
 	router.HandleFunc("/users", handlers.UserCreate).Methods("POST")
 	router.HandleFunc("/users/{id}", handlers.UserUpdate).Methods("PUT")
+	router.HandleFunc("/users/{id}/password", handlers.UserUpdatePassword).Methods("PUT")
 	router.HandleFunc("/users/{id}", handlers.UserDestroy).Methods("DELETE")
 
 	return router
@@ -2194,6 +2195,7 @@ type Json struct {
 	ID        uint      ` + "`" + `json:"id"` + "`" + `
 	Name      string    ` + "`" + `json:"name"` + "`" + `
 	Email     string    ` + "`" + `json:"email"` + "`" + `
+	Locale    string    ` + "`" + `json:"locale"` + "`" + `
 	CreatedAt time.Time ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt time.Time ` + "`" + `json:"updated_at"` + "`" + `
 }
@@ -2203,6 +2205,7 @@ func SetJson(userMyself entities.User) Json {
 		ID:        userMyself.ID,
 		Name:      userMyself.Name,
 		Email:     userMyself.Email,
+		Locale:    userMyself.Locale,
 		CreatedAt: userMyself.CreatedAt,
 		UpdatedAt: userMyself.UpdatedAt,
 	}
@@ -2222,15 +2225,15 @@ import (
 	"test_repository_hub.com/test_account/test_project/db/entities"
 )
 
-type UserPermittedParams struct {
-	Name     string ` + "`" + `json:"name"` + "`" + `
-	Email    string ` + "`" + `json:"email"` + "`" + `
-	Password string ` + "`" + `json:"password"` + "`" + `
-	Locale   string ` + "`" + `json:"locale"` + "`" + `
-	Admin    bool   ` + "`" + `json:"admin"` + "`" + `
-}
-
 func UserCreate(w http.ResponseWriter, r *http.Request) {
+	type UserPermittedParams struct {
+		Name     string ` + "`" + `json:"name"` + "`" + `
+		Email    string ` + "`" + `json:"email"` + "`" + `
+		Password string ` + "`" + `json:"password"` + "`" + `
+		Locale   string ` + "`" + `json:"locale"` + "`" + `
+		Admin    bool   ` + "`" + `json:"admin"` + "`" + `
+	}
+
 	var userNew = entities.User{}
 
 	log.Info.Println("Handler: UserCreate")
@@ -2251,6 +2254,13 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func UserUpdate(w http.ResponseWriter, r *http.Request) {
+	type UserPermittedParams struct {
+		Name   string ` + "`" + `json:"name"` + "`" + `
+		Email  string ` + "`" + `json:"email"` + "`" + `
+		Locale string ` + "`" + `json:"locale"` + "`" + `
+		Admin  bool   ` + "`" + `json:"admin"` + "`" + `
+	}
+
 	log.Info.Println("Handler: UserUpdate")
 	w.Header().Set("Content-Type", "application/json")
 
@@ -2265,17 +2275,40 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	var userParams UserPermittedParams
 	_ = json.NewDecoder(r.Body).Decode(&userParams)
 
-	if userParams.Password == "" {
-		paramsExcept := []string{"Password"}
-		handler.SetPermittedParamsToEntityWithExceptions(&userParams, &userCurrent, paramsExcept)
-	} else {
-		handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
-	}
+	handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
 
 	if valid, errs := user.Update(&userCurrent); valid {
 		json.NewEncoder(w).Encode(user.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "user was successfully updated"), User: user.SetJson(userCurrent)})
 	} else {
 		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user was not updated", errs))
+	}
+}
+
+func UserUpdatePassword(w http.ResponseWriter, r *http.Request) {
+	type UserPermittedParams struct {
+		Password string ` + "`" + `json:"password"` + "`" + `
+	}
+
+	log.Info.Println("Handler: UserUpdate")
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+
+	userCurrent, err := user.Find(params["id"])
+	if err != nil {
+		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user password was not updated", []error{err}))
+		return
+	}
+
+	var userParams UserPermittedParams
+	_ = json.NewDecoder(r.Body).Decode(&userParams)
+
+	handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
+
+	if valid, errs := user.Update(&userCurrent); valid {
+		json.NewEncoder(w).Encode(user.SuccessfullySavedJson{SystemMessage: view.SetSystemMessage("notice", "user password was successfully updated"), User: user.SetJson(userCurrent)})
+	} else {
+		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user password was not updated", errs))
 	}
 }
 
@@ -2361,7 +2394,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-  "regexp"
+	"regexp"
 	"test_repository_hub.com/test_account/test_project/app/session"
 	"test_repository_hub.com/test_account/test_project/app/user"
 	"test_repository_hub.com/test_account/test_project/commons/app/handler"
@@ -2469,7 +2502,14 @@ func SessionRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func SessionSignUp(w http.ResponseWriter, r *http.Request) {
-	var newUser = entities.User{}
+	type UserPermittedParams struct {
+		Name     string ` + "`" + `json:"name"` + "`" + `
+		Email    string ` + "`" + `json:"email"` + "`" + `
+		Password string ` + "`" + `json:"password"` + "`" + `
+		Locale   string ` + "`" + `json:"locale"` + "`" + `
+	}
+
+	var userNew = entities.User{}
 
 	log.Info.Println("Handler: SessionSignUp")
 	w.Header().Set("Content-Type", "application/json")
@@ -2477,18 +2517,18 @@ func SessionSignUp(w http.ResponseWriter, r *http.Request) {
 	var userParams UserPermittedParams
 	_ = json.NewDecoder(r.Body).Decode(&userParams)
 
-	handler.SetPermittedParamsToEntity(&userParams, &newUser)
-	newUser.Admin = false
+	handler.SetPermittedParamsToEntity(&userParams, &userNew)
+	userNew.Admin = false
 
-	if valid, errs := user.Save(&newUser); valid {
-		locale.Load(newUser.Locale)
+	if valid, errs := user.Save(&userNew); valid {
+		locale.Load(userNew.Locale)
 
-		mailer.AddTo(newUser.Name, newUser.Email)
-		subject := locale.I18n.Welcome + " " + user.FirstName(&newUser)
-		body := session.SignUpMailer(&newUser)
+		mailer.AddTo(userNew.Name, userNew.Email)
+		subject := locale.I18n.Welcome + " " + user.FirstName(&userNew)
+		body := session.SignUpMailer(&userNew)
 		go mailer.Send(subject, body, true)
 
-		json.NewEncoder(w).Encode(session.SignUpSuccessMessage("notice", "user was successfully created", sessionGenerateToken(newUser, r.RemoteAddr)))
+		json.NewEncoder(w).Encode(session.SignUpSuccessMessage("notice", "user was successfully created", sessionGenerateToken(userNew, r.RemoteAddr)))
 	} else {
 		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user was not created", errs))
 	}
@@ -2654,19 +2694,32 @@ import (
 	"net/http"
 	"test_repository_hub.com/test_account/test_project/app/myself"
 	"test_repository_hub.com/test_account/test_project/app/user"
-	"test_repository_hub.com/test_account/test_project/commons/app/model"
+	"test_repository_hub.com/test_account/test_project/commons/app/handler"
 	"test_repository_hub.com/test_account/test_project/commons/app/view"
 	"test_repository_hub.com/test_account/test_project/commons/log"
-	"test_repository_hub.com/test_account/test_project/db/entities"
 )
 
 func MyselfUpdate(w http.ResponseWriter, r *http.Request) {
+	type MyselfPermittedParams struct {
+		Name   string ` + "`" + `json:"name"` + "`" + `
+		Locale string ` + "`" + `json:"locale"` + "`" + `
+	}
+
 	log.Info.Println("Handler: MyselfUpdate")
 	w.Header().Set("Content-Type", "application/json")
 
 	userMyself := user.Current
 
-	myselfSetParams(&userMyself, r)
+	var myselfParams MyselfPermittedParams
+	err := json.NewDecoder(r.Body).Decode(&myselfParams)
+	if err != nil {
+		log.Error.Println("could not parser input JSON")
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "could not parser input JSON", []error{err}))
+		return
+	}
+
+	handler.SetPermittedParamsToEntity(&myselfParams, &userMyself)
 
 	if valid, errs := user.Save(&userMyself); valid {
 		json.NewEncoder(w).Encode(view.SetDefaultMessage("notice", "user was successfully updated"))
@@ -2676,6 +2729,11 @@ func MyselfUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func MyselfUpdatePassword(w http.ResponseWriter, r *http.Request) {
+	type MyselfPasswordParams struct {
+		Password             string ` + "`" + `json:"password"` + "`" + `
+		PasswordConfirmation string ` + "`" + `json:"password_confirmation"` + "`" + `
+	}
+
 	var errs []error
 	var valid bool
 
@@ -2683,11 +2741,21 @@ func MyselfUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	userMyself := user.Current
-	userMyself.Password = r.FormValue("new_password")
+
+	var myselfParams MyselfPasswordParams
+	err := json.NewDecoder(r.Body).Decode(&myselfParams)
+	if err != nil {
+		log.Error.Println("could not parser input JSON")
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "could not parser input JSON", []error{err}))
+		return
+	}
+
+	userMyself.Password = myselfParams.Password
 
 	if !user.Exists(&userMyself) {
 		errs = append(errs, errors.New("invalid user"))
-	} else if r.FormValue("new_password") != r.FormValue("password_confirmation") {
+	} else if myselfParams.Password != myselfParams.PasswordConfirmation {
 		errs = append(errs, errors.New("password confirmation does not match new password"))
 	} else if valid, errs = user.Save(&userMyself); valid {
 		json.NewEncoder(w).Encode(view.SetDefaultMessage("notice", "password was successfully changed"))
@@ -2716,21 +2784,6 @@ func MyselfShow(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	json.NewEncoder(w).Encode(myself.SetJson(user.Current))
-}
-
-func myselfSetParams(userMyself *entities.User, r *http.Request) {
-	var allowedParams = []string{"name", "locale"}
-
-	r.ParseMultipartForm(100 * 1024)
-
-	for key := range r.Form {
-		for _, allowedParam := range allowedParams {
-			if key == allowedParam {
-				model.SetColumnValue(userMyself, allowedParam, r.FormValue(allowedParam))
-				break
-			}
-		}
-	}
 }`
 
 var dbEntitySessionContent = `package entities

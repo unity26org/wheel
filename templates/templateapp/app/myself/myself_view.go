@@ -13,6 +13,7 @@ type Json struct {
 	ID        uint      ` + "`" + `json:"id"` + "`" + `
 	Name      string    ` + "`" + `json:"name"` + "`" + `
 	Email     string    ` + "`" + `json:"email"` + "`" + `
+	Locale    string    ` + "`" + `json:"locale"` + "`" + `
 	CreatedAt time.Time ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt time.Time ` + "`" + `json:"updated_at"` + "`" + `
 }
@@ -22,6 +23,7 @@ func SetJson(userMyself entities.User) Json {
 		ID:        userMyself.ID,
 		Name:      userMyself.Name,
 		Email:     userMyself.Email,
+		Locale:    userMyself.Locale,
 		CreatedAt: userMyself.CreatedAt,
 		UpdatedAt: userMyself.UpdatedAt,
 	}
