@@ -50,8 +50,8 @@ func optionToEntityColumn(options string, isForeignKey bool) gencommon.EntityCol
 }
 
 func setMigrate() {
-	newCode := gencommon.GenerateMigrateNewCode(templatecrud.MigrateContent, templateVar)
-	currentFullCode := fileutil.ReadTextFile(filepath.Join(".", "db", "schema"), "migrate.go")
+	newCode, _ := gencommon.GenerateMigrateNewCode(templatecrud.MigrateContent, templateVar)
+	currentFullCode, _ := fileutil.ReadTextFile(filepath.Join(".", "db", "schema"), "migrate.go")
 	newFullCode, err := newmigrate.AppendNewCode(newCode, currentFullCode)
 
 	if err != nil {
@@ -67,13 +67,13 @@ func setRoutes(options map[string]bool) {
 	var newCode string
 
 	if isCustomHandler(options) {
-		newCode = gencommon.GenerateRoutesNewCode(templatecrud.CustomRoutesContent, templateVar)
+		newCode, _ = gencommon.GenerateRoutesNewCode(templatecrud.CustomRoutesContent, templateVar)
 		newCode = strings.TrimSpace(newCode)
 	} else {
-		newCode = gencommon.GenerateRoutesNewCode(templatecrud.RoutesContent, templateVar)
+		newCode, _ = gencommon.GenerateRoutesNewCode(templatecrud.RoutesContent, templateVar)
 	}
 
-	currentFullCode := fileutil.ReadTextFile(filepath.Join(".", "routes"), "routes.go")
+	currentFullCode, _ := fileutil.ReadTextFile(filepath.Join(".", "routes"), "routes.go")
 	newFullCode, err := newroutes.AppendNewCode(newCode, currentFullCode)
 
 	if err != nil {
@@ -89,12 +89,12 @@ func setAuthorize(options map[string]bool) {
 	var newCode string
 
 	if isCustomHandler(options) {
-		newCode = gencommon.GenerateAuthorizeNewCode(templatecrud.CustomAuthorizeContent, templateVar)
+		newCode, _ = gencommon.GenerateAuthorizeNewCode(templatecrud.CustomAuthorizeContent, templateVar)
 	} else {
-		newCode = gencommon.GenerateAuthorizeNewCode(templatecrud.AuthorizeContent, templateVar)
+		newCode, _ = gencommon.GenerateAuthorizeNewCode(templatecrud.AuthorizeContent, templateVar)
 	}
 
-	currentFullCode := fileutil.ReadTextFile(filepath.Join(".", "routes"), "authorize.go")
+	currentFullCode, _ := fileutil.ReadTextFile(filepath.Join(".", "routes"), "authorize.go")
 	newFullCode, err := newauthorize.AppendNewCode(newCode, currentFullCode)
 
 	if err != nil {
@@ -119,8 +119,9 @@ func isCustomHandler(options map[string]bool) bool {
 	return counter == 3 && options["handler"] && options["routes"] && options["authorize"]
 }
 
-func Generate(entityName string, columns []string, options map[string]bool) {
+func Generate(entityName string, columns []string, options map[string]bool) error {
 	var path []string
+	var err error
 
 	for _, column := range columns {
 		entityColumns = append(entityColumns, optionToEntityColumn(column, false))
@@ -140,29 +141,49 @@ func Generate(entityName string, columns []string, options map[string]bool) {
 		LowerCase:            strings.ToLower(strcase.ToCamel(entityName)),
 	}
 
-	templateVar = gencommon.TemplateVar{AppRepository: gencommon.GetAppConfig().AppRepository, EntityName: tEntityName, EntityColumns: entityColumns}
+	appConfig, err := gencommon.GetAppConfig()
+	if err != nil {
+		return err
+	}
+
+	templateVar = gencommon.TemplateVar{AppRepository: appConfig.AppRepository, EntityName: tEntityName, EntityColumns: entityColumns}
 
 	if options["model"] {
 		path = []string{".", "app", tEntityName.LowerCase, tEntityName.SnakeCase + "_model.go"}
-		gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.ModelContent, templateVar)
+		err = gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.ModelContent, templateVar)
+		if err != nil {
+			return err
+		}
 	}
 
 	if options["view"] {
 		path = []string{".", "app", tEntityName.LowerCase, tEntityName.SnakeCase + "_view.go"}
-		gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.ViewContent, templateVar)
+		err = gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.ViewContent, templateVar)
+		if err != nil {
+			return err
+		}
 	}
 
 	if options["entity"] {
 		path = []string{".", "db", "entities", tEntityName.SnakeCase + "_entity.go"}
-		gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.EntityContent, templateVar)
+		err = gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.EntityContent, templateVar)
+		if err != nil {
+			return err
+		}
 	}
 
 	if options["handler"] {
 		path = []string{".", "app", "handlers", tEntityName.SnakeCase + "_handler.go"}
 		if isCustomHandler(options) {
-			gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.CustomHandlerContent, templateVar)
+			err = gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.CustomHandlerContent, templateVar)
+			if err != nil {
+				return err
+			}
 		} else {
-			gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.HandlerContent, templateVar)
+			err = gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.HandlerContent, templateVar)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -178,4 +199,5 @@ func Generate(entityName string, columns []string, options map[string]bool) {
 		setAuthorize(options)
 	}
 
+	return nil
 }

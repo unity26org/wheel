@@ -61,11 +61,13 @@ type TemplateVar struct {
 
 var yesToAll = false
 
-func FmtNewContent(content string) string {
+func FmtNewContent(content string) (string, error) {
 	var fileName string
 
 	tmpfile, err := ioutil.TempFile("", "wheel-new-content*.go")
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	fileName = strings.TrimPrefix(tmpfile.Name(), os.TempDir())
 	fileName = strings.TrimPrefix(fileName, `/`)
@@ -74,26 +76,37 @@ func FmtNewContent(content string) string {
 	defer os.Remove(tmpfile.Name())
 
 	_, err = tmpfile.WriteString(content)
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	err = tmpfile.Close()
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	fileutil.GoFmtFile(tmpfile.Name())
 
 	return fileutil.ReadTextFile(os.TempDir(), fileName)
 }
 
-func GetAppConfig() AppConfig {
+func GetAppConfig() (AppConfig, error) {
 	var appConfig AppConfig
 
-	err := yaml.Unmarshal(fileutil.ReadBytesFile(filepath.Join(".", "config"), "app.yml"), &appConfig)
-	notify.FatalIfError(err)
+	b, err := fileutil.ReadBytesFile(filepath.Join(".", "config"), "app.yml")
+	if err != nil {
+		return AppConfig{}, err
+	}
 
-	return appConfig
+	err = yaml.Unmarshal(b, &appConfig)
+	if err != nil {
+		return AppConfig{}, err
+	}
+
+	return appConfig, nil
 }
 
-func GenerateFromTemplateString(content string, templateVar TemplateVar) string {
+func GenerateFromTemplateString(content string, templateVar TemplateVar) (string, error) {
 	var buffContent bytes.Buffer
 
 	FuncMap := template.FuncMap{
@@ -124,24 +137,32 @@ func GenerateFromTemplateString(content string, templateVar TemplateVar) string 
 	}
 
 	tmpl, err := template.New("T").Funcs(FuncMap).Parse(content)
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	err = tmpl.Execute(&buffContent, templateVar)
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
-	return buffContent.String()
+	return buffContent.String(), nil
 }
 
-func GenerateFromTemplateFile(templatePath string, templateVar TemplateVar) string {
+func GenerateFromTemplateFile(templatePath string, templateVar TemplateVar) (string, error) {
 	var content bytes.Buffer
 
 	tmpl, err := template.ParseFiles(templatePath)
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	err = tmpl.Execute(&content, &templateVar)
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
-	return content.String()
+	return content.String(), nil
 }
 
 func overwriteFile(content string, filePath string, fileName string) string {
@@ -201,16 +222,31 @@ func overwriteFileHelp() string {
 `
 }
 
-func GeneratePathAndFileFromTemplateString(path []string, content string, templateVar TemplateVar) {
+func GeneratePathAndFileFromTemplateString(path []string, content string, templateVar TemplateVar) error {
+	var err error
+
 	fileName, filePathSliced := path[len(path)-1], path[:len(path)-1]
 	filePath := sliceToPath(filePathSliced)
 	pseudoMode := "w"
 	fullPath := filepath.Join(filePath, fileName)
 
-	content = GenerateFromTemplateString(content, templateVar)
+	content, err = GenerateFromTemplateString(content, templateVar)
+	if err != nil {
+		return err
+	}
 
 	if fileutil.DirOrFileExists(fullPath) {
-		if FmtNewContent(content) == fileutil.ReadTextFile(filePath, fileName) {
+		currentContent, err := fileutil.ReadTextFile(filePath, fileName)
+		if err != nil {
+			return err
+		}
+
+		newContent, err := FmtNewContent(content)
+		if err != nil {
+			return err
+		}
+
+		if newContent == currentContent {
 			pseudoMode = "i"
 		} else {
 			pseudoMode = overwriteFile(content, filePath, fileName)
@@ -222,24 +258,29 @@ func GeneratePathAndFileFromTemplateString(path []string, content string, templa
 	} else if pseudoMode == "p" {
 		notify.Patch(fullPath)
 	} else {
-		fileutil.PersistFile(content, filePath, fileName, pseudoMode)
+		err = fileutil.PersistFile(content, filePath, fileName, pseudoMode)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func CreatePathAndFileFromTemplateString(path []string, content string, templateVar TemplateVar) {
+func CreatePathAndFileFromTemplateString(path []string, content string, templateVar TemplateVar) error {
 	fileName, filePath := path[len(path)-1], path[:len(path)-1]
-	fileutil.SaveTextFile(content, sliceToPath(filePath), fileName)
+	return fileutil.SaveTextFile(content, sliceToPath(filePath), fileName)
 }
 
-func GenerateRoutesNewCode(content string, templateVar TemplateVar) string {
+func GenerateRoutesNewCode(content string, templateVar TemplateVar) (string, error) {
 	return GenerateFromTemplateString(content, templateVar)
 }
 
-func GenerateMigrateNewCode(content string, templateVar TemplateVar) string {
+func GenerateMigrateNewCode(content string, templateVar TemplateVar) (string, error) {
 	return GenerateFromTemplateString(content, templateVar)
 }
 
-func GenerateAuthorizeNewCode(content string, templateVar TemplateVar) string {
+func GenerateAuthorizeNewCode(content string, templateVar TemplateVar) (string, error) {
 	return GenerateFromTemplateString(content, templateVar)
 }
 
@@ -270,12 +311,16 @@ func SecureRandom(size int) string {
 	return string(b)
 }
 
-func BuildRootAppPath(appRepository string) string {
+func BuildRootAppPath(appRepository string) (string, error) {
 	_, err := os.Getwd()
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	usr, err := user.Current()
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	path := filepath.Join(usr.HomeDir, "go", "src")
 
@@ -285,29 +330,34 @@ func BuildRootAppPath(appRepository string) string {
 	}
 
 	if fileutil.DirOrFileExists(path) {
-		errDirOrFileExists := errors.New("directory \"" + path + "\" already exists\n")
-		notify.FatalIfError(errDirOrFileExists)
+		return "", errors.New("directory \"" + path + "\" already exists\n")
 	}
 
-	return path
+	return path, nil
 }
 
-func CreateRootAppPath(rootAppPath string) {
+func CreateRootAppPath(rootAppPath string) error {
 	err := os.MkdirAll(rootAppPath, 0775)
-	notify.FatalIfError(err)
+	if err != nil {
+		return err
+	}
 
 	notify.Created(rootAppPath)
+
+	return nil
 }
 
 func NotifyNewApp(rootAppPath string) {
 	notify.NewApp(rootAppPath)
 }
 
-func GenerateCertificates(rootAppPath string) {
+func GenerateCertificates(rootAppPath string) error {
 	var out bytes.Buffer
 
 	err := os.MkdirAll(filepath.Join(rootAppPath, "config", "keys"), 0775)
-	notify.FatalIfError(err)
+	if err != nil {
+		return err
+	}
 
 	cmd := exec.Command("openssl", "genrsa", "-out", filepath.Join(rootAppPath, "config", "keys", "app.key.rsa"), "2048")
 	cmd.Stdout = &out
@@ -328,9 +378,14 @@ func GenerateCertificates(rootAppPath string) {
 			notify.Warn("Could not generate public certificate file. Check if openssl is installed and execute the command line below:")
 			notify.Warn("openssl rsa -in " + filepath.Join(rootAppPath, "config", "keys", "app.key.rsa") + " -pubout > " + filepath.Join(rootAppPath, "config", "keys", "app.key.rsa.pub"))
 		} else {
-			fileutil.SaveTextFile(out.String(), filepath.Join(rootAppPath, "config", "keys"), "app.key.rsa.pub")
+			err = fileutil.SaveTextFile(out.String(), filepath.Join(rootAppPath, "config", "keys"), "app.key.rsa.pub")
+			if err != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
 }
 
 func GetColumnInfo(columnName string, columnType string, extra string) (string, string, string, bool) {

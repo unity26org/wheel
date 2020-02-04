@@ -24,7 +24,7 @@ func IsGoInstalled() bool {
 	return err == nil
 }
 
-func CheckDependences() {
+func CheckDependences() error {
 	var out bytes.Buffer
 	var hasDependence bool
 
@@ -56,14 +56,16 @@ func CheckDependences() {
 			cmd.Stdout = &out
 			err := cmd.Run()
 			if err != nil {
-				notify.FatalIfError(err)
-			} else {
-				notify.Simpleln(fmt.Sprintf("         package %s was successfully installed", requiredDependence))
+				return err
 			}
+
+			notify.Simpleln(fmt.Sprintf("         package %s was successfully installed", requiredDependence))
 		} else {
 			notify.Simpleln(fmt.Sprintf("         package %s was found", requiredDependence))
 		}
 	}
+
+	return nil
 }
 
 func optionsAreValid(args []string) bool {
@@ -92,12 +94,16 @@ func checkGitIgnore(args []string) bool {
 	return b
 }
 
-func handleNewApp(args []string) {
+func handleNewApp(args []string) error {
 	var options = make(map[string]interface{})
 
+	err := checkIsGoInstalled()
+	if err != nil {
+		return err
+	}
+
 	if !optionsAreValid(args) {
-		err := errors.New("invalid option. Run \"wheel --help\" for details")
-		notify.FatalIfError(err)
+		return errors.New("invalid option. Run \"wheel --help\" for details")
 	} else {
 		preOptions := strings.Split(os.Args[2], "/")
 
@@ -106,7 +112,7 @@ func handleNewApp(args []string) {
 		options["git_ignore"] = checkGitIgnore(os.Args)
 
 		notify.Simpleln("Generating new app...")
-		generator.NewApp(options)
+		return generator.NewApp(options)
 	}
 }
 
@@ -173,7 +179,7 @@ func buildGenerateOptions(args []string) (map[string]bool, error) {
 	return options, err
 }
 
-func handleGenerateNewCrud(args []string, options map[string]bool) {
+func handleGenerateNewCrud(args []string, options map[string]bool) error {
 	var columns []string
 
 	for index, value := range args {
@@ -185,19 +191,24 @@ func handleGenerateNewCrud(args []string, options map[string]bool) {
 	}
 
 	notify.Simpleln("Generating new CRUD...")
-	generator.NewCrud(args[3], columns, options)
+	return generator.NewCrud(args[3], columns, options)
 }
 
-func handleGenerate(args []string) {
+func handleGenerate(args []string) error {
 	var options map[string]bool
 	var err error
 
+	err = checkIsGoInstalled()
+	if err != nil {
+		return err
+	}
+
 	options, err = buildGenerateOptions(args)
 	if err != nil {
-		notify.FatalIfError(err)
-	} else {
-		handleGenerateNewCrud(args, options)
+		return err
 	}
+
+	return handleGenerateNewCrud(args, options)
 }
 
 func handleHelp() {
@@ -208,12 +219,12 @@ func handleVersion() {
 	notify.Simpleln(version.Content)
 }
 
-func checkIsGoInstalled() {
+func checkIsGoInstalled() error {
 	if !IsGoInstalled() {
-		notify.FatalIfError(errors.New("\"Go\" seems not installed"))
+		return errors.New("\"Go\" seems not installed")
 	} else {
 		notify.Simpleln("\"Go\" seems installed")
-		CheckDependences()
+		return CheckDependences()
 	}
 }
 
@@ -225,11 +236,13 @@ func main() {
 	}
 
 	if command == "new" || command == "n" {
-		checkIsGoInstalled()
-		handleNewApp(os.Args)
+		if err := handleNewApp(os.Args); err != nil {
+			notify.Error(err)
+		}
 	} else if command == "generate" || command == "g" {
-		checkIsGoInstalled()
-		handleGenerate(os.Args)
+		if err := handleGenerate(os.Args); err != nil {
+			notify.Error(err)
+		}
 	} else if command == "--help" || command == "-h" {
 		handleHelp()
 	} else if command == "--version" || command == "-v" {

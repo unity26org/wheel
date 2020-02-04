@@ -17,7 +17,7 @@ func GoFmtFile(fullpath string) {
 	_ = cmd.Run()
 }
 
-func ReadBytesFile(filePath string, fileName string) []byte {
+func ReadBytesFile(filePath string, fileName string) ([]byte, error) {
 	var fullPath string
 
 	if filePath == "" {
@@ -27,17 +27,22 @@ func ReadBytesFile(filePath string, fileName string) []byte {
 	}
 
 	file, err := os.Open(fullPath)
-	notify.FatalIfError(err)
+	if err != nil {
+		return []byte{}, err
+	}
 
 	defer file.Close()
 
-	b, err := ioutil.ReadAll(file)
-
-	return b
+	return ioutil.ReadAll(file)
 }
 
-func ReadTextFile(filePath string, fileName string) string {
-	return string(ReadBytesFile(filePath, fileName))
+func ReadTextFile(filePath string, fileName string) (string, error) {
+	b, err := ReadBytesFile(filePath, fileName)
+	if err != nil {
+		return "", err
+	} else {
+		return string(b), nil
+	}
 }
 
 func DirOrFileExists(fullPath string) bool {
@@ -45,37 +50,41 @@ func DirOrFileExists(fullPath string) bool {
 	return !os.IsNotExist(err)
 }
 
-func DestroyDirOrFile(fullPath string) {
-	err := os.Remove(fullPath)
-	notify.FatalIfError(err)
+func DestroyDirOrFile(fullPath string) error {
+	return os.Remove(fullPath)
 }
 
-func DestroyAllDirOrFile(fullPath string) {
-	err := os.RemoveAll(fullPath)
-	notify.FatalIfError(err)
+func DestroyAllDirOrFile(fullPath string) error {
+	return os.RemoveAll(fullPath)
 }
 
-func UpdateTextFile(content string, filePath string, fileName string) {
-	PersistFile(content, filePath, fileName, "a")
+func UpdateTextFile(content string, filePath string, fileName string) error {
+	return PersistFile(content, filePath, fileName, "a")
 }
 
-func SaveTextFile(content string, filePath string, fileName string) {
-	PersistFile(content, filePath, fileName, "w")
+func SaveTextFile(content string, filePath string, fileName string) error {
+	return PersistFile(content, filePath, fileName, "w")
 }
 
-func PersistFile(content string, filePath string, fileName string, pseudoMode string) {
+func PersistFile(content string, filePath string, fileName string, pseudoMode string) error {
 	err := os.MkdirAll(filePath, 0775)
-	notify.FatalIfError(err)
+	if err != nil {
+		return err
+	}
 
 	fullPath := filepath.Join(filePath, fileName)
 
 	f, err := os.Create(fullPath)
-	notify.FatalIfError(err)
+	if err != nil {
+		return err
+	}
 
 	defer f.Close()
 
 	_, err = f.WriteString(content)
-	notify.FatalIfError(err)
+	if err != nil {
+		return err
+	}
 
 	f.Sync()
 
@@ -93,4 +102,6 @@ func PersistFile(content string, filePath string, fileName string, pseudoMode st
 	case "s":
 		notify.Skip(fullPath)
 	}
+
+	return nil
 }
