@@ -47,7 +47,7 @@ func {{ .EntityName.CamelCase }}Update(w http.ResponseWriter, r *http.Request) {
 
 	{{ .EntityName.LowerCamelCase }}Current, err := {{ .EntityName.LowerCase }}.Find(params["id"])
 	if err != nil {
-		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "{{ .EntityName.SnakeCase }} was not updated", []error{err}))
+		handler.Error404(w, r)
 		return
 	}
 
@@ -72,7 +72,7 @@ func {{ .EntityName.CamelCase }}Destroy(w http.ResponseWriter, r *http.Request) 
 	if err == nil && {{ .EntityName.LowerCase }}.Destroy(&{{ .EntityName.LowerCamelCase }}Current) {
 		json.NewEncoder(w).Encode(view.SetDefaultMessage("notice", "{{ .EntityName.SnakeCase }} was successfully destroyed"))
 	} else {
-		json.NewEncoder(w).Encode(view.SetDefaultMessage("alert", "{{ .EntityName.SnakeCase }} was not found"))
+		handler.Error404(w, r)
 	}
 }
 
@@ -86,7 +86,7 @@ func {{ .EntityName.CamelCase }}Show(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		json.NewEncoder(w).Encode({{ .EntityName.LowerCase }}.SetJson({{ .EntityName.LowerCamelCase }}Current))
 	} else {
-		json.NewEncoder(w).Encode(view.SetSystemMessage("alert", "{{ .EntityName.SnakeCase }} was not found"))
+		handler.Error404(w, r)
 	}
 }
 
