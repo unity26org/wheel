@@ -59,7 +59,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 
 	userCurrent, err := user.Find(params["id"])
 	if err != nil {
-		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user was not updated", []error{err}))
+		handler.Error404(w, r)
 		return
 	}
 
@@ -87,7 +87,7 @@ func UserUpdatePassword(w http.ResponseWriter, r *http.Request) {
 
 	userCurrent, err := user.Find(params["id"])
 	if err != nil {
-		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user password was not updated", []error{err}))
+		handler.Error404(w, r)
 		return
 	}
 
@@ -114,7 +114,7 @@ func UserDestroy(w http.ResponseWriter, r *http.Request) {
 	if err == nil && user.Destroy(&userCurrent) {
 		json.NewEncoder(w).Encode(view.SetDefaultMessage("notice", "user was successfully destroyed"))
 	} else {
-		json.NewEncoder(w).Encode(view.SetDefaultMessage("alert", "user was not found"))
+		handler.Error404(w, r)
 	}
 }
 
@@ -128,7 +128,7 @@ func UserShow(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		json.NewEncoder(w).Encode(user.SetJson(userCurrent))
 	} else {
-		json.NewEncoder(w).Encode(view.SetSystemMessage("alert", "user was not found"))
+		handler.Error404(w, r)
 	}
 }
 
