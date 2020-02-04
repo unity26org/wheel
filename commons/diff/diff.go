@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/unity26org/wheel/commons/fileutil"
-	"github.com/unity26org/wheel/commons/notify"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -13,17 +12,23 @@ import (
 	"strings"
 )
 
-func Diff(content string, filePath string, fileName string, removeTempFile bool) string {
+func Diff(content string, filePath string, fileName string, removeTempFile bool) (string, error) {
 	var out bytes.Buffer
 
 	tmpfile, err := ioutil.TempFile(filePath, strings.Replace(fileName, ".go", "_*.go", -1))
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	_, err = tmpfile.WriteString(content)
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	err = tmpfile.Close()
-	notify.FatalIfError(err)
+	if err != nil {
+		return "", err
+	}
 
 	fileutil.GoFmtFile(tmpfile.Name())
 
@@ -36,17 +41,22 @@ func Diff(content string, filePath string, fileName string, removeTempFile bool)
 		os.Remove(tmpfile.Name())
 	}
 
-	return out.String()
+	return out.String(), nil
 }
 
-func Patch(content string, filePath string, fileName string) {
+func Patch(content string, filePath string, fileName string) error {
 	var out bytes.Buffer
 	var in bytes.Buffer
 
 	tmpfile, err := ioutil.TempFile(filePath, strings.Replace(fileName, ".go", "_*.patch", -1))
-	notify.FatalIfError(err)
+	if err != nil {
+		return err
+	}
 
-	diff := Diff(content, filePath, fileName, false)
+	diff, err := Diff(content, filePath, fileName, false)
+	if err != nil {
+		return err
+	}
 
 	removeFile := regexp.MustCompile(`\n`).Split(diff, -1)[1]
 	removeFile = regexp.MustCompile(`(\s|\t)+`).Split(removeFile, -1)[1]
@@ -55,18 +65,29 @@ func Patch(content string, filePath string, fileName string) {
 	defer os.Remove(removeFile)
 
 	_, err = tmpfile.WriteString(diff)
-	notify.FatalIfError(err)
+	if err != nil {
+		return err
+	}
 
 	err = tmpfile.Close()
-	notify.FatalIfError(err)
+	if err != nil {
+		return err
+	}
 
-	in.Write([]byte(fileutil.ReadTextFile("", tmpfile.Name())))
+	b, err := fileutil.ReadTextFile("", tmpfile.Name())
+	if err != nil {
+		return err
+	}
+
+	in.Write([]byte(b))
 
 	cmd := exec.Command("patch", "-p0")
 	cmd.Stdout = &out
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = &in
 	_ = cmd.Run()
+
+	return nil
 }
 
 func Print(content string, filePath string, fileName string) {

@@ -2840,7 +2840,7 @@ func Migrate() {
 
 	_, err := user.FindByEmail("user@example.com")
 	if err != nil {
-		model.Db.Create(&entities.User{Name: "User Name", Email: "user@example.com", Password: crypto.SetPassword("!Secret.123!"), Locale: "en", Admin: true})
+		model.Db.Create(&entities.User{Name: "User Name", Email: "user@example.com", Password: crypto.SetPassword("Secret123!"), Locale: "en", Admin: true})
 	}
 
 	model.Db.AutoMigrate(&entities.Session{})

@@ -30,90 +30,300 @@ func prependRootAppPathToPath(path []string) []string {
 	return append([]string{rootAppPath}, path...)
 }
 
-func Generate(options map[string]interface{}) {
+func generateHandlers() error {
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(handlers.MyselfPath), handlers.MyselfContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(handlers.SessionPath), handlers.SessionContent, templateVar)
+	if err != nil {
+		return err
+	}
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(handlers.UserPath), handlers.UserContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateSession() error {
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(session.ModelPath), session.ModelContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(session.ViewPath), session.ViewContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(sessionmailer.PasswordRecoveryEnPath), sessionmailer.PasswordRecoveryEnContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(sessionmailer.PasswordRecoveryPtBrPath), sessionmailer.PasswordRecoveryPtBrContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(sessionmailer.SignUpEnPath), sessionmailer.SignUpEnContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(sessionmailer.SignUpPtBrPath), sessionmailer.SignUpPtBrContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateUser() error {
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(usertemplate.ModelPath), usertemplate.ModelContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(usertemplate.ViewPath), usertemplate.ViewContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateCommmonsApp() error {
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(handler.Path), handler.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(model.Path), model.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(model.OrderingPath), model.OrderingContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(model.PaginationPath), model.PaginationContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(model.SearchEnginePath), model.SearchEngineContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(view.Path), view.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateCommonsOthers() error {
+	// COMMONS conversor
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(conversor.Path), conversor.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	// COMMONS crypto
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(crypto.Path), crypto.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	// COMMONS locale
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(locale.Path), locale.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	// COMMONS log
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(logtemplate.Path), logtemplate.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	// COMMONS mailer
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(mailer.Path), mailer.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateConfig() error {
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.Path), config.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.AppPath), config.AppContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.DatabasePath), config.DatabaseContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(config.EmailPath), config.EmailContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	// config certs
+	err = gencommon.GenerateCertificates(rootAppPath)
+	if err != nil {
+		return err
+	}
+
+	// config locales
+	err = gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(configlocales.EnPath), configlocales.EnContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(configlocales.PtBrPath), configlocales.PtBrContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateDb() error {
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(entities.SessionPath), entities.SessionContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(entities.UserPath), entities.UserContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(schema.Path), schema.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateRoutes() error {
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(routes.AuthorizePath), routes.AuthorizeContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(routes.MiddlewarePath), routes.MiddlewareContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(routes.Path), routes.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Generate(options map[string]interface{}) error {
+	var err error
+
 	// Main vars
 	templateVar = gencommon.TemplateVar{
 		AppName:       options["app_name"].(string),
 		AppRepository: options["app_repository"].(string),
 		SecretKey:     gencommon.SecureRandom(128),
 	}
-	rootAppPath = gencommon.BuildRootAppPath(options["app_repository"].(string))
+
+	rootAppPath, err = gencommon.BuildRootAppPath(options["app_repository"].(string))
+	if err != nil {
+		return err
+	}
 
 	// APP Root path
-	gencommon.CreateRootAppPath(rootAppPath)
+	if err = gencommon.CreateRootAppPath(rootAppPath); err != nil {
+		return err
+	}
 
-	// APP Handlers
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(handlers.MyselfPath), handlers.MyselfContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(handlers.SessionPath), handlers.SessionContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(handlers.UserPath), handlers.UserContent, templateVar)
+	// APP handler
+	if err = generateHandlers(); err != nil {
+		return err
+	}
 
 	// APP myself
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(myself.ViewPath), myself.ViewContent, templateVar)
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(myself.ViewPath), myself.ViewContent, templateVar)
+	if err != nil {
+		return err
+	}
 
 	// APP session
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(session.ModelPath), session.ModelContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(session.ViewPath), session.ViewContent, templateVar)
-	gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(sessionmailer.PasswordRecoveryEnPath), sessionmailer.PasswordRecoveryEnContent, templateVar)
-	gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(sessionmailer.PasswordRecoveryPtBrPath), sessionmailer.PasswordRecoveryPtBrContent, templateVar)
-	gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(sessionmailer.SignUpEnPath), sessionmailer.SignUpEnContent, templateVar)
-	gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(sessionmailer.SignUpPtBrPath), sessionmailer.SignUpPtBrContent, templateVar)
+	if err = generateSession(); err != nil {
+		return err
+	}
 
 	// APP user
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(usertemplate.ModelPath), usertemplate.ModelContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(usertemplate.ViewPath), usertemplate.ViewContent, templateVar)
+	if err = generateUser(); err != nil {
+		return err
+	}
 
 	// COMMONS APPs
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(handler.Path), handler.Content, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(model.Path), model.Content, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(model.OrderingPath), model.OrderingContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(model.PaginationPath), model.PaginationContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(model.SearchEnginePath), model.SearchEngineContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(view.Path), view.Content, templateVar)
+	if err = generateCommmonsApp(); err != nil {
+		return err
+	}
 
-	// COMMONS conversor
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(conversor.Path), conversor.Content, templateVar)
-
-	// COMMONS crypto
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(crypto.Path), crypto.Content, templateVar)
-
-	// COMMONS locale
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(locale.Path), locale.Content, templateVar)
-
-	// COMMONS log
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(logtemplate.Path), logtemplate.Content, templateVar)
-
-	// COMMONS mailer
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(mailer.Path), mailer.Content, templateVar)
+	// COMMONS Others
+	if err = generateCommonsOthers(); err != nil {
+		return err
+	}
 
 	// config
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.Path), config.Content, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.AppPath), config.AppContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.DatabasePath), config.DatabaseContent, templateVar)
-	gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(config.EmailPath), config.EmailContent, templateVar)
-
-	// config certs
-	gencommon.GenerateCertificates(rootAppPath)
-
-	// config locales
-	gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(configlocales.EnPath), configlocales.EnContent, templateVar)
-	gencommon.CreatePathAndFileFromTemplateString(prependRootAppPathToPath(configlocales.PtBrPath), configlocales.PtBrContent, templateVar)
+	if err = generateConfig(); err != nil {
+		return err
+	}
 
 	// db
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(entities.SessionPath), entities.SessionContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(entities.UserPath), entities.UserContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(schema.Path), schema.Content, templateVar)
+	if err = generateDb(); err != nil {
+		return err
+	}
 
 	// routes
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(routes.AuthorizePath), routes.AuthorizeContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(routes.MiddlewarePath), routes.MiddlewareContent, templateVar)
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(routes.Path), routes.Content, templateVar)
+	if err = generateRoutes(); err != nil {
+		return err
+	}
 
 	// main
-	gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(templates.MainPath), templates.MainContent, templateVar)
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(templates.MainPath), templates.MainContent, templateVar)
+	if err != nil {
+		return err
+	}
+
 	if options["git_ignore"].(bool) {
-		gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(templates.GitIgnorePath), templates.GitIgnoreContent, templateVar)
+		err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(templates.GitIgnorePath), templates.GitIgnoreContent, templateVar)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Final
 	gencommon.NotifyNewApp(rootAppPath)
+
+	return nil
 }

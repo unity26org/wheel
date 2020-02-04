@@ -10,7 +10,7 @@ import (
 func FatalIfError(err error) {
 	if err != nil {
 		Error(err)
-		// os.Exit(0)
+		os.Exit(0)
 	}
 }
 
