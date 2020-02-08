@@ -31,8 +31,13 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var userParams UserPermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&userParams)
-
+	err := json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
+  
 	handler.SetPermittedParamsToEntity(&userParams, &userNew)
 
 	valid, errs := user.Create(&userNew)
@@ -64,7 +69,12 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userParams UserPermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&userParams)
+	err = json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
 
 	handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
 
@@ -92,7 +102,12 @@ func UserUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userParams UserPermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&userParams)
+	err = json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
 
 	handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
 
@@ -102,7 +117,6 @@ func UserUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(view.SetErrorMessage("alert", "user password was not updated", errs))
 	}
 }
-
 
 func UserDestroy(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Handler: UserDestroy")

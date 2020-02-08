@@ -978,6 +978,14 @@ func SetForbiddenErrorMessage() DefaultMessage {
 
 func SetNotFoundErrorMessage() DefaultMessage {
 	return SetDefaultMessage("alert", "404 Not found")
+}
+
+func SetBadRequestErrorMessage() DefaultMessage {
+	return SetDefaultMessage("alert", "400 Bad Request")
+}
+
+func SetBadRequestInvalidJsonErrorMessage() DefaultMessage {
+	return SetDefaultMessage("alert", "400 Bad Request - could not parse JSON")
 }`
 
 var commonsAppSearchEngineContent = `package model
@@ -1512,6 +1520,18 @@ func Error404(w http.ResponseWriter, r *http.Request) {
   w.WriteHeader(404)
 
 	json.NewEncoder(w).Encode(view.SetNotFoundErrorMessage())
+}
+
+func Error400(w http.ResponseWriter, r *http.Request, jsonParseError bool) {
+	log.Info.Println("Handler: Error400")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	if jsonParseError {
+		json.NewEncoder(w).Encode(view.SetBadRequestInvalidJsonErrorMessage())
+	} else {
+		json.NewEncoder(w).Encode(view.SetBadRequestErrorMessage())
+	}
 }
 
 func QueryParamsToMapCriteria(param string, mapParams map[string][]string) map[string]string {
@@ -2240,7 +2260,12 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var userParams UserPermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&userParams)
+	err := json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
 
 	handler.SetPermittedParamsToEntity(&userParams, &userNew)
 
@@ -2273,7 +2298,12 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userParams UserPermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&userParams)
+	err = json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
 
 	handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
 
@@ -2301,7 +2331,12 @@ func UserUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userParams UserPermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&userParams)
+	err = json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
 
 	handler.SetPermittedParamsToEntity(&userParams, &userCurrent)
 
@@ -2428,7 +2463,12 @@ func SessionSignIn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var signInParams SessionSignInParams
-	_ = json.NewDecoder(r.Body).Decode(&signInParams)
+	err := json.NewDecoder(r.Body).Decode(&signInParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
 
 	userAuth, err := user.Authenticate(signInParams.Email, signInParams.Password)
 
@@ -2515,7 +2555,12 @@ func SessionSignUp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var userParams UserPermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&userParams)
+	err := json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
 
 	handler.SetPermittedParamsToEntity(&userParams, &userNew)
 	userNew.Admin = false
