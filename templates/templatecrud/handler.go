@@ -27,7 +27,13 @@ func {{ .EntityName.CamelCase }}Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var {{ .EntityName.LowerCamelCase }}Params {{ .EntityName.CamelCase }}PermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&{{ .EntityName.LowerCamelCase }}Params)
+	err := json.NewDecoder(r.Body).Decode(&{{ .EntityName.LowerCamelCase }}Params)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
+
 	handler.SetPermittedParamsToEntity(&{{ .EntityName.LowerCamelCase }}Params, &{{ .EntityName.LowerCamelCase }}New)
 
 	valid, errs := {{ .EntityName.LowerCase }}.Create(&{{ .EntityName.LowerCamelCase }}New)
@@ -52,7 +58,13 @@ func {{ .EntityName.CamelCase }}Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var {{ .EntityName.LowerCamelCase }}Params {{ .EntityName.CamelCase }}PermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&{{ .EntityName.LowerCamelCase }}Params)
+	err = json.NewDecoder(r.Body).Decode(&{{ .EntityName.LowerCamelCase }}Params)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
+  
 	handler.SetPermittedParamsToEntity(&{{ .EntityName.LowerCamelCase }}Params, &{{ .EntityName.LowerCamelCase }}Current)
 
 	if valid, errs := {{ .EntityName.LowerCase }}.Update(&{{ .EntityName.LowerCamelCase }}Current); valid {

@@ -47,7 +47,12 @@ func SessionSignIn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var signInParams SessionSignInParams
-	_ = json.NewDecoder(r.Body).Decode(&signInParams)
+	err := json.NewDecoder(r.Body).Decode(&signInParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
 
 	userAuth, err := user.Authenticate(signInParams.Email, signInParams.Password)
 
@@ -134,7 +139,12 @@ func SessionSignUp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var userParams UserPermittedParams
-	_ = json.NewDecoder(r.Body).Decode(&userParams)
+	err := json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		log.Error.Println("could not parse JSON")
+		handler.Error400(w, r, true)
+		return
+	}
 
 	handler.SetPermittedParamsToEntity(&userParams, &userNew)
 	userNew.Admin = false

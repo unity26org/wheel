@@ -54,4 +54,13 @@ func SetForbiddenErrorMessage() DefaultMessage {
 
 func SetNotFoundErrorMessage() DefaultMessage {
 	return SetDefaultMessage("alert", "404 Not found")
-}`
+}
+
+func SetBadRequestErrorMessage() DefaultMessage {
+	return SetDefaultMessage("alert", "400 Bad Request")
+}
+
+func SetBadRequestInvalidJsonErrorMessage() DefaultMessage {
+	return SetDefaultMessage("alert", "400 Bad Request - could not parse JSON")
+}
+`

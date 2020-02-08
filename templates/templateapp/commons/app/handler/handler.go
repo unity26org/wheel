@@ -44,6 +44,18 @@ func Error404(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(view.SetNotFoundErrorMessage())
 }
 
+func Error400(w http.ResponseWriter, r *http.Request, jsonParseError bool) {
+	log.Info.Println("Handler: Error400")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	if jsonParseError {
+		json.NewEncoder(w).Encode(view.SetBadRequestInvalidJsonErrorMessage())
+	} else {
+		json.NewEncoder(w).Encode(view.SetBadRequestErrorMessage())
+	}
+}
+
 func QueryParamsToMapCriteria(param string, mapParams map[string][]string) map[string]string {
 	var criteria, value string
 	var checkParam, removePrefix, removeSufix *regexp.Regexp
