@@ -7,6 +7,7 @@ var Content = `package mailer
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/adilsonchacon/blog/commons/log"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net"
@@ -15,7 +16,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"{{ .AppRepository }}/commons/log"
 )
 
 type Config struct {
@@ -27,11 +27,11 @@ type Config struct {
 }
 
 var (
-	from mail.Address
-	to   []mail.Address
-	cc   []mail.Address
-	bcc  []mail.Address
-  validEmail = regexp.MustCompile(` + "`" + `\A[^@]+@([^@\.]+\.)+[^@\.]+\z` + "`" + `)
+	from       mail.Address
+	to         []mail.Address
+	cc         []mail.Address
+	bcc        []mail.Address
+	validEmail = regexp.MustCompile(` + "`" + `\A[^@]+@([^@\.]+\.)+[^@\.]+\z` + "`" + `)
 )
 
 func SetFrom(name string, tEmail string) {
@@ -76,7 +76,11 @@ func ResetReceipts() {
 func Send(subject string, body string, html bool) {
 	receipts := Receipts()
 	headers := make(map[string]string)
-	config := loadConfigFile()
+	config, err := loadConfigFile()
+	if err != nil {
+		log.Error.Println("mailer.Send", err)
+		return
+	}
 
 	if from.String() == "<@>" {
 		from = mail.Address{config.Name, config.User}
@@ -115,6 +119,12 @@ func Send(subject string, body string, html bool) {
 	host, _, _ := net.SplitHostPort(servername)
 	auth := smtp.PlainAuth("", config.User, config.Password, host)
 
+	err = checkHost(host)
+	if err != nil {
+		log.Error.Println("mailer.Send", err)
+		return
+	}
+
 	// TLS config
 	tlsconfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -126,45 +136,53 @@ func Send(subject string, body string, html bool) {
 	// from the very beginning (no starttls)
 	conn, err := tls.Dial("tcp", servername, tlsconfig)
 	if err != nil {
-		log.Fatal.Panic(err)
+		log.Error.Println("mailer.Send", err)
+		return
 	}
 
 	client, err := smtp.NewClient(conn, host)
 	if err != nil {
-		log.Fatal.Panic(err)
+		log.Error.Println("mailer.Send", err)
+		return
 	}
 
 	// Auth
 	if err = client.Auth(auth); err != nil {
-		log.Fatal.Panic(err)
+		log.Error.Println("mailer.Send", err)
+		return
 	}
 
 	// To
 	if err = client.Mail(from.Address); err != nil {
-		log.Fatal.Panic(err)
+		log.Error.Println("mailer.Send", err)
+		return
 	}
 
 	// To, Cc and Bcc
 	for i := 0; i < len(receipts); i++ {
 		if err = client.Rcpt(receipts[0]); err != nil {
-			log.Fatal.Panic(err)
+			log.Error.Println("mailer.Send", err)
+			return
 		}
 	}
 
 	// Data
 	socket, err := client.Data()
 	if err != nil {
-		log.Fatal.Panic(err)
+		log.Error.Println("mailer.Send", err)
+		return
 	}
 
 	_, err = socket.Write([]byte(message))
 	if err != nil {
-		log.Fatal.Panic(err)
+		log.Error.Println("mailer.Send", err)
+		return
 	}
 
 	err = socket.Close()
 	if err != nil {
-		log.Fatal.Panic(err)
+		log.Error.Println("mailer.Send", err)
+		return
 	}
 
 	client.Quit()
@@ -215,22 +233,46 @@ func Receipts() []string {
 	return receipts
 }
 
-func loadConfigFile() Config {
+func loadConfigFile() (Config, error) {
 	config := Config{}
 
-	err := yaml.Unmarshal(readConfigFile(), &config)
+	content, err := readConfigFile()
 	if err != nil {
-		log.Error.Fatalf("error: %v", err)
+		return config, err
 	}
 
-	return config
+	err = yaml.Unmarshal(content, &config)
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
 }
 
-func readConfigFile() []byte {
+func readConfigFile() ([]byte, error) {
 	data, err := ioutil.ReadFile("./config/email.yml")
 	if err != nil {
-		log.Error.Fatal(err)
+		return nil, err
 	}
 
-	return data
+	return data, nil
+}
+
+func checkHost(host string) error {
+	var err error
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		_, err = net.LookupHost(host)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err = net.LookupAddr(host)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }`
