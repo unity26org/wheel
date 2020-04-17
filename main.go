@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/unity26org/wheel/commons/notify"
-	"github.com/unity26org/wheel/generator"
-	"github.com/unity26org/wheel/help"
-	"github.com/unity26org/wheel/version"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/unity26org/wheel/commons/notify"
+	"github.com/unity26org/wheel/generator"
+	"github.com/unity26org/wheel/help"
+	"github.com/unity26org/wheel/version"
 )
 
 func IsGoInstalled() bool {
@@ -171,6 +172,13 @@ func buildGenerateOptions(args []string) (map[string]bool, error) {
 		options["migrate"] = true
 		if len(args) < 4 || !isResourceNameValid(args[3]) {
 			err = errors.New("invalid entity name")
+		}
+	case "migration":
+		// wheel g migration add_total_to_users total:integer
+		// wheel g migration remove_total_from_users
+		options["migrate"] = true
+		if len(args) < 4 || !isResourceNameValid(args[3]) {
+			err = errors.New("invalid migration name")
 		}
 	default:
 		err = errors.New("invalid generate subject. Run \"wheel --help\" for details")

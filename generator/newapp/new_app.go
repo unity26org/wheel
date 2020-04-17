@@ -19,8 +19,13 @@ import (
 	"github.com/unity26org/wheel/templates/templateapp/config"
 	"github.com/unity26org/wheel/templates/templateapp/config/configlocales"
 	"github.com/unity26org/wheel/templates/templateapp/db/entities"
+	"github.com/unity26org/wheel/templates/templateapp/db/migrate"
+	"github.com/unity26org/wheel/templates/templateapp/db/migrate/adapter"
+	"github.com/unity26org/wheel/templates/templateapp/db/migrate/adapter/postgresql"
 	"github.com/unity26org/wheel/templates/templateapp/db/schema"
+	"github.com/unity26org/wheel/templates/templateapp/db/schema/data/col"
 	"github.com/unity26org/wheel/templates/templateapp/routes"
+	"time"
 )
 
 var templateVar gencommon.TemplateVar
@@ -220,6 +225,51 @@ func generateDb() error {
 	if err != nil {
 		return err
 	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(col.Path), col.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(migrate.FacadePath), migrate.FacadeContent, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(adapter.Path), adapter.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(postgresql.Path), postgresql.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
+	templateVar.MigrationMetadata = gencommon.MigrationMetadata{Type: "CREATE_TABLE", Name: "CreateUsers", Version: time.Now().Format("20060102150405")}
+	migrate.UserPath[len(migrate.UserPath)-1] = templateVar.MigrationMetadata.Version + "_" + migrate.UserPath[len(migrate.UserPath)-1]
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(migrate.UserPath), migrate.UserContent, templateVar)
+	if err != nil {
+		return err
+	}
+	templateVar.EntityName = gencommon.SetEntityName("user")
+	gencommon.UpdateMigrate(rootAppPath, templateVar)
+
+	for {
+		if templateVar.MigrationMetadata.Version != time.Now().Format("20060102150405") {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	templateVar.MigrationMetadata = gencommon.MigrationMetadata{Type: "CREATE_TABLE", Name: "CreateSessions", Version: time.Now().Format("20060102150405")}
+	migrate.SessionPath[len(migrate.SessionPath)-1] = templateVar.MigrationMetadata.Version + "_" + migrate.SessionPath[len(migrate.SessionPath)-1]
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(migrate.SessionPath), migrate.SessionContent, templateVar)
+	if err != nil {
+		return err
+	}
+	templateVar.EntityName = gencommon.SetEntityName("session")
+	gencommon.UpdateMigrate(rootAppPath, templateVar)
 
 	return nil
 }

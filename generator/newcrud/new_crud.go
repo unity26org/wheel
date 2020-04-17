@@ -7,7 +7,6 @@ import (
 	"github.com/unity26org/wheel/commons/notify"
 	"github.com/unity26org/wheel/generator/gencommon"
 	"github.com/unity26org/wheel/generator/newauthorize"
-	"github.com/unity26org/wheel/generator/newmigrate"
 	"github.com/unity26org/wheel/generator/newroutes"
 	"github.com/unity26org/wheel/templates/templatecrud"
 	"path/filepath"
@@ -18,9 +17,6 @@ var entityColumns []gencommon.EntityColumn
 var templateVar gencommon.TemplateVar
 
 func optionToEntityColumn(options string, isForeignKey bool) gencommon.EntityColumn {
-	var columnName, columnType, extra string
-	var isReference bool
-
 	columnData := strings.Split(options, ":")
 	if len(columnData) == 1 {
 		columnData = append(columnData, "string")
@@ -30,36 +26,19 @@ func optionToEntityColumn(options string, isForeignKey bool) gencommon.EntityCol
 	}
 
 	if isForeignKey {
-		columnName = columnData[0]
-		columnType = strcase.ToCamel(columnData[0])
-		extra = ""
-		isReference = false
+		return gencommon.EntityColumn{
+			Name:                strcase.ToCamel(columnData[0]),
+			NameSnakeCase:       strcase.ToSnake(columnData[0]),
+			NameSnakeCasePlural: inflection.Plural(strcase.ToSnake(columnData[0])),
+			Type:                strcase.ToCamel(columnData[0]),
+			Extras:              "",
+			IsRelation:          false,
+			IsForeignKey:        true,
+			MigrateType:         "References",
+			MigrateExtra:        `map[string]interface{}{"foreign_key": true}`,
+		}
 	} else {
-		columnName, columnType, extra, isReference = gencommon.GetColumnInfo(columnData[0], columnData[1], columnData[2])
-	}
-
-	return gencommon.EntityColumn{
-		Name:                strcase.ToCamel(columnName),
-		NameSnakeCase:       strcase.ToSnake(columnName),
-		NameSnakeCasePlural: inflection.Plural(strcase.ToSnake(columnName)),
-		Type:                columnType,
-		Extras:              extra,
-		IsReference:         isReference,
-		IsForeignKey:        isForeignKey,
-	}
-}
-
-func setMigrate() {
-	newCode, _ := gencommon.GenerateMigrateNewCode(templatecrud.MigrateContent, templateVar)
-	currentFullCode, _ := fileutil.ReadTextFile(filepath.Join(".", "db", "schema"), "migrate.go")
-	newFullCode, err := newmigrate.AppendNewCode(newCode, currentFullCode)
-
-	if err != nil {
-		notify.WarnAppendToMigrate(err, newCode)
-	} else if newFullCode == "" {
-		notify.Identical(filepath.Join(".", "db", "schema", "migrate.go"))
-	} else {
-		fileutil.UpdateTextFile(newFullCode, filepath.Join(".", "db", "schema"), "migrate.go")
+		return gencommon.GetColumnInfo(columnData[0], columnData[1], columnData[2])
 	}
 }
 
@@ -119,34 +98,65 @@ func isCustomHandler(options map[string]bool) bool {
 	return counter == 3 && options["handler"] && options["routes"] && options["authorize"]
 }
 
-func Generate(entityName string, columns []string, options map[string]bool) error {
-	var path []string
-	var err error
+func isSingleMigration(options map[string]bool) bool {
+	var counter int
+	counter = 0
 
-	for _, column := range columns {
-		entityColumns = append(entityColumns, optionToEntityColumn(column, false))
-
-		if entityColumns[len(entityColumns)-1].IsReference {
-			entityColumns = append(entityColumns, optionToEntityColumn(column, true))
+	for _, value := range options {
+		if value {
+			counter++
 		}
 	}
 
-	tEntityName := gencommon.EntityName{
-		CamelCase:            strcase.ToCamel(entityName),
-		CamelCasePlural:      inflection.Plural(strcase.ToCamel(entityName)),
-		LowerCamelCase:       strcase.ToLowerCamel(entityName),
-		LowerCamelCasePlural: inflection.Plural(strcase.ToLowerCamel(entityName)),
-		SnakeCase:            strcase.ToSnake(entityName),
-		SnakeCasePlural:      inflection.Plural(strcase.ToSnake(entityName)),
-		LowerCase:            strings.ToLower(strcase.ToCamel(entityName)),
+	return counter == 1 && options["migrate"]
+}
+
+func notSingleMigration(options map[string]bool) bool {
+	var counter int
+	counter = 0
+
+	for _, value := range options {
+		if value {
+			counter++
+		}
 	}
+
+	return counter > 1 && options["migrate"]
+}
+
+func Generate(entityName string, columns []string, options map[string]bool) error {
+	var path []string
+	var err error
+	var tEntityName gencommon.EntityName
+	var tMigrationMetadata gencommon.MigrationMetadata
 
 	appConfig, err := gencommon.GetAppConfig()
 	if err != nil {
 		return err
 	}
 
-	templateVar = gencommon.TemplateVar{AppRepository: appConfig.AppRepository, EntityName: tEntityName, EntityColumns: entityColumns}
+	for _, column := range columns {
+		entityColumns = append(entityColumns, optionToEntityColumn(column, false))
+
+		if entityColumns[len(entityColumns)-1].IsRelation {
+			entityColumns = append(entityColumns, optionToEntityColumn(column, true))
+		}
+	}
+
+	if isSingleMigration(options) {
+		tMigrationMetadata = gencommon.SetMigrationMetadata(entityName)
+		tEntityName = gencommon.SetEntityName(tMigrationMetadata.Entity)
+	} else if notSingleMigration(options) {
+		tEntityName = gencommon.SetEntityName(entityName)
+		tMigrationMetadata = gencommon.SetMigrationMetadata("Create" + tEntityName.CamelCasePlural)
+	}
+
+	templateVar = gencommon.TemplateVar{
+		AppRepository:     appConfig.AppRepository,
+		EntityName:        tEntityName,
+		EntityColumns:     entityColumns,
+		MigrationMetadata: tMigrationMetadata,
+	}
 
 	if options["model"] {
 		path = []string{".", "app", tEntityName.LowerCase, tEntityName.SnakeCase + "_model.go"}
@@ -192,7 +202,12 @@ func Generate(entityName string, columns []string, options map[string]bool) erro
 	}
 
 	if options["migrate"] {
-		setMigrate()
+		path = []string{".", "db", "migrate", templateVar.MigrationMetadata.Version + "_" + templateVar.MigrationMetadata.FileNameSufix + ".go"}
+		err = gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.MigrationVersionContent, templateVar)
+		if err != nil {
+			return err
+		}
+		gencommon.UpdateMigrate(".", templateVar)
 	}
 
 	if options["authorize"] {

@@ -105,9 +105,8 @@ func Destroy({{ .EntityName.LowerCamelCase }} *entities.{{ .EntityName.CamelCase
 
 func Paginate(criteria map[string]string, order, page, perPage string) ([]entities.{{ .EntityName.CamelCase }}, int, int, int) {
 	var {{ .EntityName.LowerCamelCasePlural }} []entities.{{ .EntityName.CamelCase }}
-	var {{ .EntityName.LowerCamelCase }} entities.{{ .EntityName.CamelCase }}
 
-	q := model.Query{Db: model.Db, Table: &{{ .EntityName.LowerCamelCase }}}
+	q := model.Query{Db: model.Db, Table: &{{ .EntityName.LowerCamelCasePlural }}}
 	q.SearchEngine(criteria)
 	q.Ordering(order)
 	currentPage, totalPages, totalEntries := q.Pagination(page, perPage)
