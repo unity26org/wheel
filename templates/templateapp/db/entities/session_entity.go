@@ -9,8 +9,8 @@ import (
 )
 
 type Session struct {
-	ID            uint       ` + "`" + `gorm:"primary_key"` + "`" + `
-	UserID        uint       ` + "`" + `gorm:"index"` + "`" + `
+	ID            uint64     ` + "`" + `gorm:"primary_key"` + "`" + `
+	UserID        uint64     ` + "`" + `gorm:"index"` + "`" + `
 	Jti           string     ` + "`" + `gorm:"type:varchar(255);unique_index"` + "`" + `
 	App           string     ` + "`" + `gorm:"type:varchar(255)"` + "`" + `
 	Requests      int        ` + "`" + `gorm:"not null;default:0"` + "`" + `

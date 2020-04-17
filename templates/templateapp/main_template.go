@@ -29,8 +29,10 @@ func main() {
 	model.Connect()
 
 	if mode == "migrate" {
-		schema.Migrate()
-	} else if mode == "s" || mode == "server" {
+    schema.Migrate()
+  } else if mode == "rollback" {
+    schema.Rollback()	
+  } else if mode == "s" || mode == "server" {
 		log.Fatal.Println(http.ListenAndServe(host+":"+port, routes.Routes(host, port)))
 	} else {
 		log.Fatal.Println("invalid run mode, please, use \"--help\" for more details")

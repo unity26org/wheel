@@ -5,12 +5,11 @@ var UserPath = []string{"db", "entities", "user_entity.go"}
 var UserContent = `package entities
 
 import (
-	"github.com/jinzhu/gorm"
 	"time"
 )
 
 type User struct {
-	gorm.Model
+	ID                  uint64     ` + "`" + `gorm:"primary_key"` + "`" + `
 	Name                string     ` + "`" + `gorm:"type:varchar(255)"` + "`" + `
 	Email               string     ` + "`" + `gorm:"type:varchar(255);unique_index"` + "`" + `
 	Admin               bool       ` + "`" + `gorm:"default:false"` + "`" + `
@@ -19,4 +18,7 @@ type User struct {
 	ResetPasswordSentAt *time.Time ` + "`" + `gorm:"default:null"` + "`" + `
 	Locale              string     ` + "`" + `gorm:"type:varchar(255);default:'en'"` + "`" + `
 	Sessions            []Session
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	DeletedAt           *time.Time
 }`

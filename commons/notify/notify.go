@@ -100,7 +100,7 @@ func Fatal(message string) {
 func WarnAppendToRoutes(err error, newCode string) {
 	Warn(err.Error())
 	fmt.Println("")
-	fmt.Println("Edit file \"routes/routes.go\" and append this new code bellow to \"func Routes()\"")
+	fmt.Println("Edit file \"routes/routes.go\" and append this new code into \"func Routes()\"")
 	fmt.Println(newCode)
 	fmt.Println("")
 }
@@ -108,7 +108,7 @@ func WarnAppendToRoutes(err error, newCode string) {
 func WarnAppendToMigrate(err error, newCode string) {
 	Warn(err.Error())
 	fmt.Println("")
-	fmt.Println("Edit file \"db/schema/migrate.go\" and append this new code bellow at \"func Migrate()\"")
+	fmt.Println("Edit file \"db/schema/schema.go\" and append this new code into \"func loadMigrations()\"")
 	fmt.Println("")
 	fmt.Println("\t" + newCode)
 	fmt.Println("")
@@ -117,7 +117,7 @@ func WarnAppendToMigrate(err error, newCode string) {
 func WarnAppendToAuthorize(err error, newCode string) {
 	Warn(err.Error())
 	fmt.Println("")
-	fmt.Println("Edit file \"routes/authorize.go\" and append this new code bellow at \"func init()\"")
+	fmt.Println("Edit file \"routes/authorize.go\" and append this new code into \"func init()\"")
 	fmt.Println("")
 	fmt.Println(newCode)
 	fmt.Println("")

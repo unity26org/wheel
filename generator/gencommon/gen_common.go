@@ -4,9 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
+	"github.com/iancoleman/strcase"
+	"github.com/jinzhu/inflection"
 	"github.com/unity26org/wheel/commons/diff"
 	"github.com/unity26org/wheel/commons/fileutil"
 	"github.com/unity26org/wheel/commons/notify"
+	"github.com/unity26org/wheel/generator/newmigrate"
+	"github.com/unity26org/wheel/templates/templatecommon"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math/rand"
@@ -37,8 +42,10 @@ type EntityColumn struct {
 	NameSnakeCasePlural string
 	Type                string
 	Extras              string
-	IsReference         bool
+	IsRelation          bool
 	IsForeignKey        bool
+	MigrateType         string
+	MigrateExtra        string
 }
 
 type EntityName struct {
@@ -51,12 +58,21 @@ type EntityName struct {
 	LowerCase            string
 }
 
+type MigrationMetadata struct {
+	Type          string
+	Name          string
+	Version       string
+	FileNameSufix string
+	Entity        string
+}
+
 type TemplateVar struct {
-	AppRepository string
-	AppName       string
-	SecretKey     string
-	EntityName    EntityName
-	EntityColumns []EntityColumn
+	AppRepository     string
+	AppName           string
+	SecretKey         string
+	EntityName        EntityName
+	EntityColumns     []EntityColumn
+	MigrationMetadata MigrationMetadata
 }
 
 var yesToAll = false
@@ -110,6 +126,7 @@ func GenerateFromTemplateString(content string, templateVar TemplateVar) (string
 	var buffContent bytes.Buffer
 
 	FuncMap := template.FuncMap{
+		// TODO: Filter for References and Not References
 		"isLastIndex": func(index int, tSlice interface{}) bool {
 			return index == reflect.ValueOf(tSlice).Len()-1
 		},
@@ -133,6 +150,27 @@ func GenerateFromTemplateString(content string, templateVar TemplateVar) (string
 				}
 			}
 			return foreignKeys
+		},
+		"filterEntityColumnsRelationOnly": func(tEntityColumns []EntityColumn) []EntityColumn {
+			var relations []EntityColumn
+			for _, element := range tEntityColumns {
+				if element.IsRelation {
+					relations = append(relations, element)
+				}
+			}
+			return relations
+		},
+		"filterEntityColumnsNotRelations": func(tEntityColumns []EntityColumn) []EntityColumn {
+			var notRelations []EntityColumn
+			for _, element := range tEntityColumns {
+				if !element.IsRelation {
+					notRelations = append(notRelations, element)
+				}
+			}
+			return notRelations
+		},
+		"checkMigrationType": func(migrationType string) bool {
+			return templateVar.MigrationMetadata.Type == migrationType
 		},
 	}
 
@@ -388,47 +426,135 @@ func GenerateCertificates(rootAppPath string) error {
 	return nil
 }
 
-func GetColumnInfo(columnName string, columnType string, extra string) (string, string, string, bool) {
+func GetColumnInfo(columnName string, columnType string, extra string) EntityColumn {
 	var regexpText = regexp.MustCompile(`text`)
 	var regexpString = regexp.MustCompile(`string`)
 	var regexpDecimal = regexp.MustCompile(`float|double|decimal`)
+	var regexpBigint = regexp.MustCompile(`bigint`)
 	var regexpInteger = regexp.MustCompile(`int|integer`)
 	var regexpUnsignedInteger = regexp.MustCompile(`uint`)
 	var regexpDatetime = regexp.MustCompile(`datetime`)
 	var regexpBoolean = regexp.MustCompile(`bool`)
 	var regexpReference = regexp.MustCompile(`reference`)
+	var migrateType, migrateExtra string
 
-	isReference := false
+	isRelation := false
 
 	if regexpText.MatchString(columnType) {
-		columnType = "string"
 		extra = "`gorm:\"type:text\"`"
-	} else if regexpString.MatchString(columnType) || regexpText.MatchString(columnType) {
+		migrateExtra = `nil`
 		columnType = "string"
-		extra = gormSpecificationForString(extra)
+		migrateType = "Text"
+	} else if regexpString.MatchString(columnType) || regexpText.MatchString(columnType) {
+		extra, migrateExtra = extraSpecificationForString(extra)
+		columnType = "string"
+		migrateType = "String"
 	} else if regexpUnsignedInteger.MatchString(columnType) {
+		extra, migrateExtra = extraSpecificationForIntegers(extra)
 		columnType = "uint"
-		extra = gormSpecificationForIntegers(extra)
-	} else if regexpInteger.MatchString(columnType) {
+		migrateType = "Integer"
+	} else if regexpBigint.MatchString(columnType) {
+		extra, migrateExtra = extraSpecificationForIntegers(extra)
 		columnType = "int64"
-		extra = gormSpecificationForIntegers(extra)
+		migrateType = "Bigint"
+	} else if regexpInteger.MatchString(columnType) {
+		extra, migrateExtra = extraSpecificationForIntegers(extra)
+		columnType = "int"
+		migrateType = "Integer"
 	} else if regexpDatetime.MatchString(columnType) {
+		extra, migrateExtra = extraSpecificationForDatetime(extra)
 		columnType = "*time.Time"
-		extra = gormSpecificationForDatetime(extra)
+		migrateType = "Datetime"
 	} else if regexpBoolean.MatchString(columnType) {
+		extra, migrateExtra = extraSpecificationForBoolean(extra)
 		columnType = "bool"
-		extra = gormSpecificationForBoolean(extra)
+		migrateType = "Boolean"
 	} else if regexpDecimal.MatchString(columnType) {
+		extra, migrateExtra = extraSpecificationForDecimals(columnType, extra)
 		columnType = "float64"
-		extra = gormSpecificationForDecimals(extra)
+		migrateType = "Numeric"
 	} else if regexpReference.MatchString(columnType) {
-		columnType = "uint"
 		extra = "`gorm:\"index\"`"
+		columnType = "uint"
 		columnName = columnName + "_ID"
-		isReference = true
+		migrateType = "References"
+		isRelation = true
 	}
 
-	return columnName, columnType, extra, isReference
+	return EntityColumn{
+		Name:                strcase.ToCamel(columnName),
+		NameSnakeCase:       strcase.ToSnake(columnName),
+		NameSnakeCasePlural: inflection.Plural(strcase.ToSnake(columnName)),
+		Type:                columnType,
+		Extras:              extra,
+		IsRelation:          isRelation,
+		IsForeignKey:        false,
+		MigrateType:         migrateType,
+		MigrateExtra:        migrateExtra,
+	}
+}
+
+func UpdateMigrate(basePath string, templateVar TemplateVar) {
+	newCode, _ := GenerateMigrateNewCode(templatecommon.MigrateContent, templateVar)
+	currentFullCode, _ := fileutil.ReadTextFile(filepath.Join(basePath, "db", "schema"), "schema.go")
+	newFullCode, err := newmigrate.AppendNewCode(newCode, currentFullCode)
+
+	if err != nil {
+		notify.WarnAppendToMigrate(err, newCode)
+	} else if newFullCode == "" {
+		notify.Identical(filepath.Join(basePath, "db", "schema", "schema.go"))
+	} else {
+		fileutil.UpdateTextFile(newFullCode, filepath.Join(basePath, "db", "schema"), "schema.go")
+	}
+}
+
+func SetEntityName(name string) EntityName {
+	nameSingular := inflection.Singular(name)
+	namePlural := inflection.Plural(nameSingular)
+
+	entityName := EntityName{
+		CamelCase:            strcase.ToCamel(nameSingular),
+		CamelCasePlural:      strcase.ToCamel(namePlural),
+		LowerCamelCase:       strcase.ToLowerCamel(nameSingular),
+		LowerCamelCasePlural: strcase.ToLowerCamel(namePlural),
+		SnakeCase:            strcase.ToSnake(nameSingular),
+		SnakeCasePlural:      strcase.ToSnake(namePlural),
+		LowerCase:            strings.ToLower(strcase.ToCamel(nameSingular)),
+	}
+
+	return entityName
+}
+
+func SetMigrationMetadata(name string) MigrationMetadata {
+	nameCamelCase := strcase.ToCamel(name)
+	nameSnakeCase := strcase.ToSnake(name)
+
+	migrationMetadata := MigrationMetadata{
+		Name:          nameCamelCase,
+		FileNameSufix: nameSnakeCase,
+		Version:       time.Now().Format("20060102150405"),
+	}
+
+	if strings.HasPrefix(nameSnakeCase, "add") {
+		migrationMetadata.Type = "ADD_COLUMN"
+		pieces := strings.Split(nameSnakeCase, "_to_")
+		migrationMetadata.Entity = inflection.Singular(pieces[len(pieces)-1])
+	} else if strings.HasPrefix(nameSnakeCase, "remove_") {
+		migrationMetadata.Type = "REMOVE_COLUMN"
+		pieces := strings.Split(nameSnakeCase, "_from_")
+		migrationMetadata.Entity = inflection.Singular(pieces[len(pieces)-1])
+	} else if strings.HasPrefix(nameSnakeCase, "drop") {
+		migrationMetadata.Type = "DROP_TABLE"
+		migrationMetadata.Entity = inflection.Singular(strings.TrimPrefix(nameSnakeCase, "drop_table_"))
+	} else if strings.HasPrefix(nameSnakeCase, "create") {
+		migrationMetadata.Type = "CREATE_TABLE"
+		migrationMetadata.Entity = inflection.Singular(strings.TrimPrefix(nameSnakeCase, "create_table_"))
+	} else {
+		migrationMetadata.Type = "GENERAL_CHANGE"
+		migrationMetadata.Entity = ""
+	}
+
+	return migrationMetadata
 }
 
 func sliceToPath(path []string) string {
@@ -445,70 +571,102 @@ func sliceToPath(path []string) string {
 	return filePath
 }
 
-func gormSpecificationForString(extra string) string {
+func extraSpecificationForString(extra string) (string, string) {
 	var index string
+	var migrate string
 
 	if extra == "index" {
 		index = ";index"
+		migrate = `map[string]interface{}{"index": true}`
 	} else {
-		index = ""
+		migrate = "nil"
 	}
 
-	return "`gorm:\"type:varchar(255)" + index + "\"`"
+	return "`gorm:\"type:varchar(255)" + index + "\"`", migrate
 }
 
-func gormSpecificationForIntegers(extra string) string {
+func extraSpecificationForIntegers(extra string) (string, string) {
 	var index string
+	var migrate string
 
 	if extra == "index" {
 		index = "`gorm:\"index\"`"
+		migrate = `map[string]interface{}{"index": true}`
 	} else {
-		index = ""
+		migrate = "nil"
 	}
 
-	return index
+	return index, migrate
 }
 
-func gormSpecificationForDecimals(extra string) string {
+func extraSpecificationForDecimals(columnType string, extra string) (string, string) {
 	var index string
+	var migrate string
+	var regexpPrecision = regexp.MustCompile(`\((\d+)(\,(\d+)){0,1}\)`)
+	var subMatches [][]string
+	var migrationExtras []string
 
 	if extra == "index" {
 		index = ";index"
-	} else {
-		index = ""
+		migrationExtras = append(migrationExtras, `"index": true`)
 	}
 
-	return "`gorm:\"type:decimal\"" + index + "`"
+	subMatches = regexpPrecision.FindAllStringSubmatch(columnType, -1)
+	if len(subMatches) > 0 && len(subMatches[0]) > 0 {
+		migrationExtras = append(migrationExtras, `"precision": `+subMatches[0][1])
+
+		if len(subMatches[0]) == 4 {
+			migrationExtras = append(migrationExtras, `"scale": `+subMatches[0][3])
+		}
+	}
+	fmt.Println(columnType)
+	fmt.Println(extra)
+	fmt.Println(subMatches)
+	fmt.Println(migrationExtras)
+
+	if len(migrationExtras) > 0 {
+		migrate = `map[string]interface{}{ ` + strings.Join(migrationExtras, ",") + `}`
+	} else {
+		migrate = "nil"
+	}
+
+	return "`gorm:\"type:decimal\"" + index + "`", migrate
 }
 
-func gormSpecificationForDatetime(extra string) string {
+func extraSpecificationForDatetime(extra string) (string, string) {
 	var index string
+	var migrate string
 
 	if extra == "index" {
 		index = ";index"
+		migrate = `map[string]interface{}{"index": true}`
 	} else {
-		index = ""
+		migrate = "nil"
 	}
 
-	return "`gorm:\"default:null\"" + index + "`"
+	return "`gorm:\"default:null\"" + index + "`", migrate
 }
 
-func gormSpecificationForBoolean(extra string) string {
+func extraSpecificationForBoolean(extra string) (string, string) {
 	var index string
+	var migrate string
 
 	if extra == "index" {
 		index = "`gorm:\"default:null\";index`"
+		migrate = `map[string]interface{}{"index": true}`
 	} else if extra == "true" || extra == "t" {
 		index = "`gorm:\"default:true\"`"
+		migrate = `map[string]interface{}{"default": true}`
 	} else if extra == "false" || extra == "f" {
 		index = "`gorm:\"default:false\"`"
+		migrate = `map[string]interface{}{"default": false}`
 	} else {
-		index = ""
+		migrate = "nil"
 	}
 
-	return index
+	return index, migrate
 }
 
-func gormSpecificationForReference() string {
-	return "`gorm:\"index\"`"
+func extraSpecificationForReference() (string, string) {
+	return "`gorm:\"index\"`", `map[string]interface{}{"foreign_key": true}`
 }

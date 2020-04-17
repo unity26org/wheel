@@ -21,6 +21,8 @@ const (
 
 	commentSingleLine = 12
 	commentMultiLine  = 13
+
+	lastCloseBracketFound = 14
 )
 
 var lastCloseBracket int
@@ -39,6 +41,9 @@ func insideFuncInit(i int) {
 	} else if currentChar == "}" && stack[len(stack)-1] == "{" {
 		stack = stack[:len(stack)-1]
 		lastCloseBracket = i + 1
+		if len(stack) == 0 {
+			currentState = lastCloseBracketFound
+		}
 	} else if currentChar == "`" && stack[len(stack)-1] == "`" && !lastCharWasBackSlash {
 		stack = stack[:len(stack)-1]
 	} else if currentChar == "`" && stack[len(stack)-1] == "{" {
@@ -69,7 +74,6 @@ func insideCommentMultiLine() {
 }
 
 func AppendNewCode(newCode string, code string) (string, error) {
-	var err error
 	var i int
 	var outputStr string
 
@@ -120,15 +124,14 @@ func AppendNewCode(newCode string, code string) (string, error) {
 
 		lastCharWasBackSlash = (currentChar == "\\")
 		lastCharWasSlash = (currentChar == "/")
+		if currentState == lastCloseBracketFound {
+			outputStr = code[0:lastCloseBracket-1] + "\n    " + newCode + "\n" + code[lastCloseBracket-1:len(code)]
+			return outputStr, nil
+		}
+
 	}
 
-	if currentState == initCharWasFoundT && len(stack) == 0 {
-		outputStr = code[0:lastCloseBracket-1] + "\n    " + newCode + "\n" + code[lastCloseBracket-1:len(code)]
-	} else {
-		err = errors.New("Could not parse Authorize file.")
-	}
-
-	return outputStr, err
+	return "", errors.New("Could not parse Authorize file.")
 }
 
 func newCodeAlreadyExists(newCode string, code string) bool {
