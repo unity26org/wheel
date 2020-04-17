@@ -14,16 +14,25 @@ const (
 	funcCharWasFoundN = 3
 	funcCharWasFoundC = 4
 
-	migrateCharWasFoundM = 5
-	migrateCharWasFoundI = 6
-	migrateCharWasFoundG = 7
-	migrateCharWasFoundR = 8
-	migrateCharWasFoundA = 9
-	migrateCharWasFoundT = 10
-	migrateCharWasFoundE = 11
+	migrateCharWasFoundL  = 5
+	migrateCharWasFoundO  = 6
+	migrateCharWasFoundA  = 7
+	migrateCharWasFoundD  = 8
+	migrateCharWasFoundM  = 9
+	migrateCharWasFoundI  = 10
+	migrateCharWasFoundG  = 11
+	migrateCharWasFoundR  = 12
+	migrateCharWasFoundA2 = 13
+	migrateCharWasFoundT  = 14
+	migrateCharWasFoundI2 = 15
+	migrateCharWasFoundO2 = 16
+	migrateCharWasFoundN  = 17
+	migrateCharWasFoundS  = 18
 
-	commentSingleLine = 12
-	commentMultiLine  = 13
+	commentSingleLine = 19
+	commentMultiLine  = 20
+
+	lastCloseBracketFound = 21
 )
 
 var lastCloseBracket int
@@ -42,6 +51,9 @@ func insideFuncMigrate(i int) {
 	} else if currentChar == "}" && stack[len(stack)-1] == "{" {
 		stack = stack[:len(stack)-1]
 		lastCloseBracket = i + 1
+		if len(stack) == 0 {
+			currentState = lastCloseBracketFound
+		}
 	} else if currentChar == "`" && stack[len(stack)-1] == "`" && !lastCharWasBackSlash {
 		stack = stack[:len(stack)-1]
 	} else if currentChar == "`" && stack[len(stack)-1] == "{" {
@@ -72,7 +84,6 @@ func insideCommentMultiLine() {
 }
 
 func AppendNewCode(newCode string, code string) (string, error) {
-	var err error
 	var i int
 	var outputStr string
 
@@ -97,7 +108,15 @@ func AppendNewCode(newCode string, code string) (string, error) {
 			currentState = funcCharWasFoundN
 		} else if currentChar == "c" && currentState == funcCharWasFoundN {
 			currentState = funcCharWasFoundC
-		} else if currentChar == "M" && currentState == funcCharWasFoundC {
+		} else if currentChar == "l" && currentState == funcCharWasFoundC {
+			currentState = migrateCharWasFoundL
+		} else if currentChar == "o" && currentState == migrateCharWasFoundL {
+			currentState = migrateCharWasFoundO
+		} else if currentChar == "a" && currentState == migrateCharWasFoundO {
+			currentState = migrateCharWasFoundA
+		} else if currentChar == "d" && currentState == migrateCharWasFoundA {
+			currentState = migrateCharWasFoundD
+		} else if currentChar == "M" && currentState == migrateCharWasFoundD {
 			currentState = migrateCharWasFoundM
 		} else if currentChar == "i" && currentState == migrateCharWasFoundM {
 			currentState = migrateCharWasFoundI
@@ -106,18 +125,24 @@ func AppendNewCode(newCode string, code string) (string, error) {
 		} else if currentChar == "r" && currentState == migrateCharWasFoundG {
 			currentState = migrateCharWasFoundR
 		} else if currentChar == "a" && currentState == migrateCharWasFoundR {
-			currentState = migrateCharWasFoundA
-		} else if currentChar == "t" && currentState == migrateCharWasFoundA {
+			currentState = migrateCharWasFoundA2
+		} else if currentChar == "t" && currentState == migrateCharWasFoundA2 {
 			currentState = migrateCharWasFoundT
-		} else if currentChar == "e" && currentState == migrateCharWasFoundT {
-			currentState = migrateCharWasFoundE
+		} else if currentChar == "i" && currentState == migrateCharWasFoundT {
+			currentState = migrateCharWasFoundI2
+		} else if currentChar == "o" && currentState == migrateCharWasFoundI2 {
+			currentState = migrateCharWasFoundO2
+		} else if currentChar == "n" && currentState == migrateCharWasFoundO2 {
+			currentState = migrateCharWasFoundN
+		} else if currentChar == "s" && currentState == migrateCharWasFoundN {
+			currentState = migrateCharWasFoundS
 		} else if currentChar == "/" && lastCharWasSlash && currentState != commentMultiLine {
 			stateBeforeComment = currentState
 			currentState = commentSingleLine
 		} else if currentChar == "*" && lastCharWasSlash && currentState != commentSingleLine {
 			stateBeforeComment = currentState
 			currentState = commentMultiLine
-		} else if currentState == migrateCharWasFoundE {
+		} else if currentState == migrateCharWasFoundS {
 			insideFuncMigrate(i)
 		} else if currentState == commentSingleLine {
 			insideCommentSingleLine()
@@ -129,15 +154,15 @@ func AppendNewCode(newCode string, code string) (string, error) {
 
 		lastCharWasBackSlash = (currentChar == "\\")
 		lastCharWasSlash = (currentChar == "/")
+
+		if currentState == lastCloseBracketFound {
+			outputStr = code[0:lastCloseBracket-1] + "\n    " + newCode + "\n" + code[lastCloseBracket-1:len(code)]
+			return outputStr, nil
+		}
+
 	}
 
-	if currentState == migrateCharWasFoundE && len(stack) == 0 {
-		outputStr = code[0:lastCloseBracket-1] + "\n    " + newCode + "\n" + code[lastCloseBracket-1:len(code)]
-	} else {
-		err = errors.New("Could not parse Migrate file.")
-	}
-
-	return outputStr, err
+	return "", errors.New("Could not parse Migrate file.")
 }
 
 func newCodeAlreadyExists(newCode string, code string) bool {
