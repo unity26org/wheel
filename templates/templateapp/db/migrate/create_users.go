@@ -35,8 +35,6 @@ func (m *Version{{ .MigrationMetadata.Version }}) up() error {
 		col.String("reset_password_token", nil),
 		col.Datetime("reset_password_sent_at", nil),
 		col.String("locale", nil),
-		col.Datetime("created_at", nil),
-		col.Datetime("updated_at", nil),
 		col.Datetime("deleted_at", nil),
 	})
 
