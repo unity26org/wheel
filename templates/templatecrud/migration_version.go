@@ -89,7 +89,6 @@ func (m *Version{{ .MigrationMetadata.Version }}) down() error {
   
   {{- end }}
   
-  return nil
   {{- else if checkMigrationType "REMOVE_COLUMN" }}
 
   {{- $EntityNameSnakeCasePlural := .EntityName.SnakeCasePlural }}

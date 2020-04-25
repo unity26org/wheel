@@ -24,6 +24,9 @@ func (ddl Ddl) CreateTable(table string, columns []col.Info) string {
 	var newIndexes []string
 	var newForeignKeys []string
 
+	columns = append(columns, col.Datetime("created_at", map[string]interface{}{"null": false}))
+	columns = append(columns, col.Datetime("updated_at", map[string]interface{}{"null": false}))
+
 	createTable = "BEGIN;\n"
 	createTable = createTable + "CREATE TABLE " + table + " (\n"
 	newColumns = append(newColumns, "id BIGSERIAL PRIMARY KEY")
