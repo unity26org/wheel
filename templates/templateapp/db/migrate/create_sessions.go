@@ -33,8 +33,6 @@ func (m *Version{{ .MigrationMetadata.Version }}) up() error {
 		col.String("address", nil),
 		col.Boolean("active", map[string]interface{}{"default": true}),
 		col.Datetime("last_request_at", map[string]interface{}{"null": false}),
-		col.Datetime("created_at", nil),
-		col.Datetime("updated_at", nil),
 		col.Datetime("expires_at", nil),
 	})
 
