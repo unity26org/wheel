@@ -127,6 +127,14 @@ func GenerateFromTemplateString(content string, templateVar TemplateVar) (string
 
 	FuncMap := template.FuncMap{
 		// TODO: Filter for References and Not References
+		"hasDateTimeType": func(tEntityColumns []EntityColumn) bool {
+			for _, element := range tEntityColumns {
+				if element.Type == "*time.Time" {
+					return true
+				}
+			}
+			return false
+		},
 		"isLastIndex": func(index int, tSlice interface{}) bool {
 			return index == reflect.ValueOf(tSlice).Len()-1
 		},
