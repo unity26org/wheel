@@ -32,7 +32,7 @@ type SessionSignInParams struct {
 }
 
 type SessionClaims struct {
-	Uid uint   ` + "`" + `json:"uid"` + "`" + `
+	Uid uint64 ` + "`" + `json:"uid"` + "`" + `
 	Jti string ` + "`" + `json:"jti"` + "`" + `
 	jwt.StandardClaims
 }
@@ -206,7 +206,7 @@ func SessionRecovery(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func SessionCheck(token string) (uint, error) {
+func SessionCheck(token string) (uint64, error) {
 	authToken, err := sessionAuthToken(token)
 	if err != nil {
 		return 0, errors.New("invalid token")

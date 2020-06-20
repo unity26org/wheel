@@ -19,7 +19,7 @@ type SuccessfullySavedJson struct {
 }
 
 type Json struct {
-	ID uint ` + "`" + `json:"id"` + "`" + `
+	ID uint64 ` + "`" + `json:"id"` + "`" + `
   {{- range .EntityColumns }}
   {{- if not .IsForeignKey }}
   {{ .Name }} {{ .Type }} ` + "`" + `json:"{{ .NameSnakeCase }}"` + "`" + `
