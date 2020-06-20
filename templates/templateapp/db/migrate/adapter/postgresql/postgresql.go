@@ -124,7 +124,14 @@ func (ddl Ddl) RenameColumn(table string, column string, newColumnName string) s
 }
 
 func (ddl Ddl) ChangeColumnType(table string, column string, newColumnType string) string {
-	return "ALTER TABLE " + table + " ALTER COLUMN " + column + " TYPE " + ddl.translateToSqlType(newColumnType) + ";"
+	newType := ddl.translateToSqlType(newColumnType)
+	query := "ALTER TABLE " + table + " ALTER COLUMN " + column + " TYPE " + newType
+
+	if newType != "VARCHAR" && newType != "TEXT" {
+		query = query + " USING " + column + "::" + newType
+	}
+
+	return query + ";"
 }
 
 func (ddl Ddl) ChangeColumnNull(table string, column string, isNull bool) string {

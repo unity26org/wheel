@@ -475,7 +475,7 @@ func GetColumnInfo(columnName string, columnType string, extra string) EntityCol
 		migrateType = "Numeric"
 	} else if regexpReference.MatchString(columnType) {
 		extra = "`gorm:\"index\"`"
-		columnType = "uint"
+		columnType = "uint64"
 		columnName = columnName + "_ID"
 		migrateType = "References"
 		isRelation = true

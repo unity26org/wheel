@@ -41,19 +41,19 @@ func loggingMiddleware(next http.Handler) http.Handler {
 }
 
 func authorizeMiddleware(next http.Handler) http.Handler {
-	var userId uint
+	var userID uint64
 	var err error
 	var userRole string
 	var signedInUser entities.User
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		userId = 0
+		userID = 0
 		err = nil
 		userRole = "public"
 
-		userId, err = checkToken(r.Header.Get("Authorization"))
+		userID, err = checkToken(r.Header.Get("Authorization"))
 		if err == nil {
-			if signedInUser, err = checkSignedInUser(userId); err == nil {
+			if signedInUser, err = checkSignedInUser(userID); err == nil {
 				userRole = "signed_in"
 			}
 
@@ -82,14 +82,14 @@ func checkAdminUser(signedInUser entities.User) bool {
 	}
 }
 
-func checkSignedInUser(userId uint) (entities.User, error) {
-	log.Info.Printf("checking user id: %d...\n", userId)
+func checkSignedInUser(userID uint64) (entities.User, error) {
+	log.Info.Printf("checking user id: %d...\n", userID)
 
-  if userId == 0 {
+  if userID == 0 {
 		log.Info.Println("user is not available")
 		return entities.User{}, errors.New("user is not available")
-  } else if signedInUser, err := user.Find(userId); err == nil {
-		user.SetCurrent(userId)
+  } else if signedInUser, err := user.Find(userID); err == nil {
+		user.SetCurrent(userID)
 		log.Info.Println("user was found")
 		return signedInUser, nil
 	} else {
@@ -98,7 +98,7 @@ func checkSignedInUser(userId uint) (entities.User, error) {
 	}
 }
 
-func checkToken(token string) (uint, error) {
+func checkToken(token string) (uint64, error) {
 	log.Info.Println("checking token...")
   
   if token == "" {
@@ -109,13 +109,13 @@ func checkToken(token string) (uint, error) {
   }
 }
 
-func validateToken(token string) (uint, error) {
+func validateToken(token string) (uint64, error) {
 	log.Info.Println("validating token...")
   
-  userId, err := handlers.SessionCheck(token)
+  userID, err := handlers.SessionCheck(token)
   if err == nil {
 	  log.Info.Println("token is valid")
-	  return userId, nil
+	  return userID, nil
   } else {
 	  log.Info.Println("invalid token")
 	  return 0, errors.New("invalid token")

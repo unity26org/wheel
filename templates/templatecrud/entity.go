@@ -7,7 +7,7 @@ import (
 )
 
 type {{ .EntityName.CamelCase }} struct {
-	ID uint ` + "`" + `gorm:"primary_key"` + "`" + `
+	ID uint64 ` + "`" + `gorm:"primary_key"` + "`" + `
   {{- range .EntityColumns }}
   {{ .Name }} {{ .Type }} {{ .Extras }}
   {{- end }}
