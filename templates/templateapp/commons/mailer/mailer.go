@@ -7,7 +7,7 @@ var Content = `package mailer
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/adilsonchacon/blog/commons/log"
+	"{{ .AppRepository }}/commons/log"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net"
