@@ -12,6 +12,9 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"regexp"
+  {{- if hasDateTimeType .EntityColumns }}
+  "time"
+  {{- end }}
 )
 
 type {{ .EntityName.CamelCase }}PermittedParams struct {
