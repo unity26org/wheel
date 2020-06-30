@@ -2,4 +2,4 @@ package version
 
 import ()
 
-var Content = `Wheel 1.0`
+var Content = `Wheel 1.1.4`
