@@ -5,8 +5,9 @@ var MainPath = []string{"main.go"}
 var MainContent = `package main
 
 import (
-	"flag"
+  "github.com/adilsonchacon/sargo"
 	"net/http"
+  "os"
 	"{{ .AppRepository }}/commons/app/model"
 	"{{ .AppRepository }}/commons/log"
 	"{{ .AppRepository }}/config"
@@ -15,24 +16,28 @@ import (
 )
 
 func main() {
-	var mode string
-	var port string
-	var host string
+	sargo.Set("mode", "m", "server", "run mode (options: server/migrate). Default value is \"server\"")
+  sargo.Set("host", "h", "localhost", "http server host. Default value is \"localhost\"")
+  sargo.Set("port", "p", 8081, "http server port. Default value is \"8081\"")
 
-	flag.StringVar(&mode, "mode", "server", "run mode (options: server/migrate)")
-	flag.StringVar(&host, "host", "localhost", "http server host")
-	flag.StringVar(&port, "port", "8081", "http server port")
-	flag.Parse()
+  if len(os.Args) > 1 && (os.Args[1] == "--help" || os.Args[1] == "-h") {
+  	sargo.PrintHelpAndExit()
+  }
+  
+  mode, _ := sargo.Get("mode")
+  host, _ := sargo.Get("host")
+  port, _ := sargo.Get("port")
 
 	log.Info.Println("starting app", config.App.AppName)
 
-	model.Connect()
-
 	if mode == "migrate" {
+  	model.Connect()
     schema.Migrate()
   } else if mode == "rollback" {
+  	model.Connect()
     schema.Rollback()	
   } else if mode == "s" || mode == "server" {
+  	model.Connect()
 		log.Fatal.Println(http.ListenAndServe(host+":"+port, routes.Routes(host, port)))
 	} else {
 		log.Fatal.Println("invalid run mode, please, use \"--help\" for more details")
