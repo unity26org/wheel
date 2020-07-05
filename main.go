@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
-	"regexp"
-	"strings"
-
 	"github.com/unity26org/wheel/commons/notify"
 	"github.com/unity26org/wheel/generator"
 	"github.com/unity26org/wheel/help"
 	"github.com/unity26org/wheel/version"
+	"os"
+	"os/exec"
+	"regexp"
+	"strings"
 )
 
 func IsGoInstalled() bool {
@@ -41,7 +40,7 @@ func CheckDependences() error {
 
 	installedDependences := strings.Split(out.String(), "\n")
 
-	requiredDependences := []string{"github.com/jinzhu/gorm", "gopkg.in/yaml.v2", "github.com/gorilla/mux", "github.com/dgrijalva/jwt-go", "github.com/satori/go.uuid", "github.com/lib/pq", "golang.org/x/crypto/bcrypt"}
+	requiredDependences := []string{"github.com/jinzhu/gorm", "gopkg.in/yaml.v2", "github.com/gorilla/mux", "github.com/dgrijalva/jwt-go", "github.com/satori/go.uuid", "github.com/lib/pq", "golang.org/x/crypto/bcrypt", "github.com/adilsonchacon/sargo"}
 	for _, requiredDependence := range requiredDependences {
 		hasDependence = false
 		for _, installedDependence := range installedDependences {
