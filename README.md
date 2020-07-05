@@ -133,7 +133,7 @@ Words and phrases for internacionalization. You can add your own locales files, 
 Before running you must be sure your database schema is up to date, just run the _migrate_ mode:
 
 ```
-$> go run main.go -mode=migrate
+$> go run main.go --mode=migrate
 ```
 
 Run:
@@ -187,7 +187,7 @@ Generating new CRUD...
 After any changing, don't forget to run the _migrate_ mode:
 
 ```
-$> go run main.go -mode=migrate
+$> go run main.go --mode=migrate
 $> go run main.go
 ```
 
