@@ -1,13 +1,13 @@
 package usertemplate
 
-var ViewPath = []string{"app", "user", "user_view.go"}
+var ViewPath = []string{"app", "models", "user", "user_view.go"}
 
 var ViewContent = `package user
 
 import (
 	"time"
+	"{{ .AppRepository }}/app/entities"
 	"{{ .AppRepository }}/commons/app/view"
-	"{{ .AppRepository }}/db/entities"
 )
 
 type PaginationJson struct {

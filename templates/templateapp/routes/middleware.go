@@ -11,11 +11,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"{{ .AppRepository }}/app/entities"
 	"{{ .AppRepository }}/app/handlers"
-	"{{ .AppRepository }}/app/user"
+	"{{ .AppRepository }}/app/models/user"
 	"{{ .AppRepository }}/commons/app/handler"
 	"{{ .AppRepository }}/commons/log"
-	"{{ .AppRepository }}/db/entities"
 )
 
 func loggingMiddleware(next http.Handler) http.Handler {

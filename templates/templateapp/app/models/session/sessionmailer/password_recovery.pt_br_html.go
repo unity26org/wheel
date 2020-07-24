@@ -1,6 +1,6 @@
 package sessionmailer
 
-var PasswordRecoveryPtBrPath = []string{"app", "session", "mailer", "password_recovery.pt-BR.html"}
+var PasswordRecoveryPtBrPath = []string{"app", "models", "session", "mailer", "password_recovery.pt-BR.html"}
 
 var PasswordRecoveryPtBrContent = `<!DOCTYPE html>
 <html>

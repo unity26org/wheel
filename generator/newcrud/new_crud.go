@@ -159,7 +159,7 @@ func Generate(entityName string, columns []string, options map[string]bool) erro
 	}
 
 	if options["model"] {
-		path = []string{".", "app", tEntityName.LowerCase, tEntityName.SnakeCase + "_model.go"}
+		path = []string{".", "app", "models", tEntityName.LowerCase, tEntityName.SnakeCase + "_model.go"}
 		err = gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.ModelContent, templateVar)
 		if err != nil {
 			return err
@@ -167,7 +167,7 @@ func Generate(entityName string, columns []string, options map[string]bool) erro
 	}
 
 	if options["view"] {
-		path = []string{".", "app", tEntityName.LowerCase, tEntityName.SnakeCase + "_view.go"}
+		path = []string{".", "app", "models", tEntityName.LowerCase, tEntityName.SnakeCase + "_view.go"}
 		err = gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.ViewContent, templateVar)
 		if err != nil {
 			return err
@@ -175,7 +175,7 @@ func Generate(entityName string, columns []string, options map[string]bool) erro
 	}
 
 	if options["entity"] {
-		path = []string{".", "db", "entities", tEntityName.SnakeCase + "_entity.go"}
+		path = []string{".", "app", "entities", tEntityName.SnakeCase + "_entity.go"}
 		err = gencommon.GeneratePathAndFileFromTemplateString(path, templatecrud.EntityContent, templateVar)
 		if err != nil {
 			return err

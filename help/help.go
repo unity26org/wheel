@@ -16,11 +16,10 @@ Usage:
                                            # When a handler "attributes" are functions inside handler.
                                            
 Options:
+  -d, [--database]                         # Preconfigure for selected database (options: mysql/postgresql)
   -G, [--skip-git]                         # Skip .gitignore file
 
 More:
   -h, [--help]                             # Show this help message and quit
   -v, [--version]                          # Show Wheel version number and quit
 `
-
-//   -R, [--skip-default-resources]           # Skip default resources

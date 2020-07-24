@@ -7,7 +7,11 @@ var Content = `package model
 import (
 	"errors"
 	"github.com/jinzhu/gorm"
+  {{- if eq .Database "postgres" }}
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+  {{- else if eq .Database "mysql" }}
+  _ "github.com/go-sql-driver/mysql"
+  {{- end }}
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strconv"
@@ -25,11 +29,23 @@ type Query struct {
 	Table interface{}
 }
 
+type DbConfig struct {
+	Host    string ` + "`" + `yaml:"host"` + "`" + `
+	User    string ` + "`" + `yaml:"user"` + "`" + `
+	Dbname  string ` + "`" + `yaml:"dbname"` + "`" + `
+	Port    int    ` + "`" + `yaml:"port"` + "`" + `
+	Adapter string ` + "`" + `yaml:"adapter"` + "`" + `
+	SslMode string ` + "`" + `yaml:"sslmode"` + "`" + `
+	Pool    int    ` + "`" + `yaml:"pool"` + "`" + `
+}
+
+var CurrentDbConfig DbConfig
+
 func Connect() {
 	var err error
 
 	dbConfig := loadDatabaseConfigFile()
-	Db, err = gorm.Open("postgres", stringfyDatabaseConfigFile(dbConfig))
+	Db, err = gorm.Open(dbConfig["adapter"], stringfyDatabaseConfigFile(dbConfig))
 
 	if err != nil {
 		log.Fatal.Println(err)
@@ -131,11 +147,22 @@ func readDatabaseConfigFile() []byte {
 func stringfyDatabaseConfigFile(mapped map[string]string) string {
 	var arr []string
 
-	for key, value := range mapped {
-		if key != "pool" {
-			arr = append(arr, key+"='"+value+"'")
+	if mapped["adapter"] == "mysql" {
+		return mapped["user"] + ` + "`" + `:` + "`" + ` + mapped["password"] + ` + "`" + `@/` + "`" + ` + mapped["dbname"] + ` + "`" + `?charset=utf8&parseTime=True&loc=Local` + "`" + `
+	} else {
+		for key, value := range mapped {
+			if key != "pool" && key != "adapter" {
+				arr = append(arr, key+"='"+value+"'")
+			}
 		}
-	}
 
-	return strings.Join(arr, " ")
+		return strings.Join(arr, " ")
+	}
+}
+
+func init() {
+	err := yaml.Unmarshal(readDatabaseConfigFile(), &CurrentDbConfig)
+	if err != nil {
+		log.Error.Fatalf("error: %v", err)
+	}
 }`

@@ -1,17 +1,17 @@
 package session
 
-var ViewPath = []string{"app", "session", "session_view.go"}
+var ViewPath = []string{"app", "models", "session", "session_view.go"}
 
 var ViewContent = `package session
 
 import (
 	"bytes"
 	"html/template"
-	"{{ .AppRepository }}/app/user"
+	"{{ .AppRepository }}/app/entities"
+	"{{ .AppRepository }}/app/models/user"
 	"{{ .AppRepository }}/commons/app/view"
 	"{{ .AppRepository }}/commons/log"
 	"{{ .AppRepository }}/config"
-	"{{ .AppRepository }}/db/entities"
 )
 
 type SignInSuccess struct {

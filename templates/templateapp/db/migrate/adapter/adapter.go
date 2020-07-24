@@ -15,7 +15,7 @@ type Adapter interface {
 	RemoveIndex(table string, options map[string]interface{}) string
 	AddColumn(table string, column col.Info) string
 	RenameColumn(table string, column string, newColumnName string) string
-	ChangeColumnType(table string, column string, newColumnType string) string
+	ChangeColumnType(table string, column col.Info) string
 	ChangeColumnNull(table string, column string, isNull bool) string
 	ChangeColumnDefault(table string, column string, defaultValue interface{}) string
 	RemoveColumn(table string, column string) string

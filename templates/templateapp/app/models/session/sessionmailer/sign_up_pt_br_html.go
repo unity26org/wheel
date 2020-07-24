@@ -1,6 +1,6 @@
 package sessionmailer
 
-var SignUpPtBrPath = []string{"app", "session", "mailer", "sign_up.pt-BR.html"}
+var SignUpPtBrPath = []string{"app", "models", "session", "mailer", "sign_up.pt-BR.html"}
 
 var SignUpPtBrContent = `<!DOCTYPE html>
 <html>

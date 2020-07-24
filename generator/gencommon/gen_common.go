@@ -26,14 +26,20 @@ import (
 	"time"
 )
 
+type Pagination struct {
+	Default int `yaml:"default"`
+	Maximum int `yaml:"maximum"`
+}
+
 type AppConfig struct {
-	AppName                        string   `yaml:"app_name"`
-	AppRepository                  string   `yaml:"app_repository"`
-	SecretKey                      string   `yaml:"secret_key"`
-	ResetPasswordExpirationSeconds int      `yaml:"reset_password_expiration_seconds"`
-	ResetPasswordUrl               string   `yaml:"reset_password_url"`
-	TokenExpirationSeconds         int      `yaml:"token_expiration_seconds"`
-	Locales                        []string `yaml:"locales"`
+	AppName                        string     `yaml:"app_name"`
+	AppRepository                  string     `yaml:"app_repository"`
+	SecretKey                      string     `yaml:"secret_key"`
+	ResetPasswordExpirationSeconds int        `yaml:"reset_password_expiration_seconds"`
+	ResetPasswordUrl               string     `yaml:"reset_password_url"`
+	TokenExpirationSeconds         int        `yaml:"token_expiration_seconds"`
+	Pagination                     Pagination `yaml:"pagination"`
+	Locales                        []string   `yaml:"locales"`
 }
 
 type EntityColumn struct {
@@ -70,6 +76,7 @@ type TemplateVar struct {
 	AppRepository     string
 	AppName           string
 	SecretKey         string
+	Database          string
 	EntityName        EntityName
 	EntityColumns     []EntityColumn
 	MigrationMetadata MigrationMetadata

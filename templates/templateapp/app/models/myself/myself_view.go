@@ -1,12 +1,12 @@
 package myself
 
-var ViewPath = []string{"app", "myself", "myself_view.go"}
+var ViewPath = []string{"app", "models", "myself", "myself_view.go"}
 
 var ViewContent = `package myself
 
 import (
 	"time"
-	"{{ .AppRepository }}/db/entities"
+	"{{ .AppRepository }}/app/entities"
 )
 
 type Json struct {
