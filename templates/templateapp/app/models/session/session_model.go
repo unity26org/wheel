@@ -1,14 +1,14 @@
 package session
 
-var ModelPath = []string{"app", "session", "session_model.go"}
+var ModelPath = []string{"app", "models", "session", "session_model.go"}
 
 var ModelContent = `package session
 
 import (
 	"errors"
 	"time"
+	"{{ .AppRepository }}/app/entities"
 	"{{ .AppRepository }}/commons/app/model"
-	"{{ .AppRepository }}/db/entities"
 )
 
 const NotFound = "session was not found"

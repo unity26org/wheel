@@ -7,7 +7,7 @@ var FacadeContent = `package migrate
 import (
 	"{{ .AppRepository }}/commons/app/model"
 	"{{ .AppRepository }}/db/migrate/adapter"
-	"{{ .AppRepository }}/db/migrate/adapter/postgresql"
+	"{{ .AppRepository }}/db/migrate/adapter/{{ .Database }}"
 	"{{ .AppRepository }}/db/schema/data/col"
 	"time"
   "fmt"
@@ -17,7 +17,7 @@ var sql string
 var Ddl adapter.Adapter
 
 func init() {
-	Ddl = postgresql.Ddl{}
+	Ddl = {{ .Database }}.Ddl{}
 }
 
 func CreateTable(table string, columns []col.Info) error {
@@ -51,9 +51,9 @@ func RenameColumn(table string, column string, newColumnName string) error {
 	return PrintAndExec("RenameColumn(\""+table+"\", \""+column+"\", \""+newColumnName+"\")", sql)
 }
 
-func ChangeColumnType(table string, column string, newColumnType string) error {
-	sql = Ddl.ChangeColumnType(table, column, newColumnType)
-	return PrintAndExec("ChangeColumnType(\""+table+"\", \""+column+"\", \""+newColumnType+"\")", sql)
+func ChangeColumnType(table string, column col.Info) error {
+	sql = Ddl.ChangeColumnType(table, column)
+	return PrintAndExec("ChangeColumnType(\""+table+"\", \""+column.Name+"\", \""+column.Type+"\")", sql)
 }
 
 func ChangeColumnNull(table string, column string, isNull bool) error {

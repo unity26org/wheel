@@ -1,6 +1,6 @@
 package entities
 
-var UserPath = []string{"db", "entities", "user_entity.go"}
+var UserPath = []string{"app", "entities", "user_entity.go"}
 
 var UserContent = `package entities
 

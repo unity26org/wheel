@@ -117,24 +117,29 @@ func valueToInterface(columnType string, valueContent string, isQueryInclusion b
 }
 
 func translateQuery(column string, query string, value string) (string, string) {
+	like := "LIKE"
+	if CurrentDbConfig.Adapter == "postgres" {
+		like = "ILIKE"
+	}
+
 	switch query {
 	case "cont":
-		query = "ILIKE ?"
+		query = like + " ?"
 		value = "%" + value + "%"
 	case "notcont":
-		query = "NOT ILIKE ?"
+		query = "NOT " + like + " ?"
 		value = "%" + value + "%"
 	case "start":
-		query = "ILIKE ?"
+		query = like + " ?"
 		value = value + "%"
 	case "notstart":
-		query = "NOT ILIKE ?"
+		query = "NOT " + like + " ?"
 		value = value + "%"
 	case "end":
-		query = "ILIKE ?"
+		query = like + " ?"
 		value = "%" + value
 	case "notend":
-		query = "NOT ILIKE ?"
+		query = "NOT " + like + " ?"
 		value = "%" + value
 	case "gt":
 		query = "> ?"

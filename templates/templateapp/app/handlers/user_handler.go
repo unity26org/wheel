@@ -6,11 +6,11 @@ var UserContent = `package handlers
 
 import (
 	"encoding/json"
-	"{{ .AppRepository }}/app/user"
+	"{{ .AppRepository }}/app/entities"
+	"{{ .AppRepository }}/app/models/user"
 	"{{ .AppRepository }}/commons/app/handler"
 	"{{ .AppRepository }}/commons/app/view"
 	"{{ .AppRepository }}/commons/log"
-	"{{ .AppRepository }}/db/entities"
 	"github.com/gorilla/mux"
 	"net/http"
 	"regexp"

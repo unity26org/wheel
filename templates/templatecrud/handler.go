@@ -4,11 +4,11 @@ var HandlerContent = `package handlers
 
 import (
 	"encoding/json"
-	"{{ .AppRepository }}/app/{{ .EntityName.LowerCase }}"
+	"{{ .AppRepository }}/app/entities"
+	"{{ .AppRepository }}/app/models/{{ .EntityName.LowerCase }}"
 	"{{ .AppRepository }}/commons/app/handler"
 	"{{ .AppRepository }}/commons/app/view"
 	"{{ .AppRepository }}/commons/log"
-	"{{ .AppRepository }}/db/entities"
 	"github.com/gorilla/mux"
 	"net/http"
 	"regexp"
