@@ -9,8 +9,8 @@ import (
 	"net/http"
   "os"
 	"{{ .AppRepository }}/commons/app/model"
+	"{{ .AppRepository }}/commons/config"
 	"{{ .AppRepository }}/commons/log"
-	"{{ .AppRepository }}/config"
 	"{{ .AppRepository }}/db/schema"
 	"{{ .AppRepository }}/routes"
 )

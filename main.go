@@ -101,19 +101,17 @@ func checkDatabase(args []string) (string, error) {
 		if index > 2 {
 			if getNext {
 				database = value
-				fmt.Println("getNext done")
 				break
 			} else if regexpDatabaseAndEqual.MatchString(value) {
 				database = regexpDatabaseAndEqual.ReplaceAllString(value, "")
 				break
 			} else if regexpDatabase.MatchString(value) {
-				fmt.Println("getNext is true")
 				getNext = true
 			}
 		}
 	}
 
-	fmt.Println(database)
+	fmt.Println("Database:", database)
 
 	if !regexpDbAvailable.MatchString(database) {
 		return "", errors.New("invalid option. Run \"wheel --help\" for details")
