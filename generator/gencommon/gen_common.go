@@ -395,7 +395,7 @@ func CreateRootAppPath(rootAppPath string) error {
 		return err
 	}
 
-	notify.Created(rootAppPath)
+	// notify.Created(rootAppPath)
 
 	return nil
 }

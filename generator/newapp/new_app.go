@@ -7,11 +7,11 @@ import (
 	"github.com/unity26org/wheel/templates/templateapp/app/handlers"
 	"github.com/unity26org/wheel/templates/templateapp/app/models/myself"
 	"github.com/unity26org/wheel/templates/templateapp/app/models/session"
-	"github.com/unity26org/wheel/templates/templateapp/app/models/session/sessionmailer"
 	"github.com/unity26org/wheel/templates/templateapp/app/models/usertemplate"
 	"github.com/unity26org/wheel/templates/templateapp/commons/app/handler"
 	"github.com/unity26org/wheel/templates/templateapp/commons/app/model"
 	"github.com/unity26org/wheel/templates/templateapp/commons/app/view"
+	configCommon "github.com/unity26org/wheel/templates/templateapp/commons/config"
 	"github.com/unity26org/wheel/templates/templateapp/commons/conversor"
 	"github.com/unity26org/wheel/templates/templateapp/commons/crypto"
 	"github.com/unity26org/wheel/templates/templateapp/commons/locale"
@@ -19,6 +19,7 @@ import (
 	"github.com/unity26org/wheel/templates/templateapp/commons/mailer"
 	"github.com/unity26org/wheel/templates/templateapp/config"
 	"github.com/unity26org/wheel/templates/templateapp/config/configlocales"
+	"github.com/unity26org/wheel/templates/templateapp/config/mailers/sessionmailer"
 	"github.com/unity26org/wheel/templates/templateapp/db/migrate"
 	"github.com/unity26org/wheel/templates/templateapp/db/migrate/adapter"
 	"github.com/unity26org/wheel/templates/templateapp/db/migrate/adapter/mysql"
@@ -137,8 +138,13 @@ func generateCommmonsApp() error {
 }
 
 func generateCommonsOthers() error {
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(configCommon.Path), configCommon.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
 	// COMMONS conversor
-	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(conversor.Path), conversor.Content, templateVar)
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(conversor.Path), conversor.Content, templateVar)
 	if err != nil {
 		return err
 	}
@@ -171,12 +177,7 @@ func generateCommonsOthers() error {
 }
 
 func generateConfig() error {
-	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.Path), config.Content, templateVar)
-	if err != nil {
-		return err
-	}
-
-	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.AppPath), config.AppContent, templateVar)
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.AppPath), config.AppContent, templateVar)
 	if err != nil {
 		return err
 	}

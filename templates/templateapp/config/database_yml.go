@@ -11,6 +11,6 @@ port: 3306
 {{- end }}
 user: root
 dbname: {{ .AppName }}
-password: Secret123!
+password: 
 sslmode: disable
 pool: 10`

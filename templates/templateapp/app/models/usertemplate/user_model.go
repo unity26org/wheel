@@ -11,8 +11,8 @@ import (
 	"time"
 	"{{ .AppRepository }}/app/entities"
 	"{{ .AppRepository }}/commons/app/model"
+	"{{ .AppRepository }}/commons/config"
 	"{{ .AppRepository }}/commons/crypto"
-	"{{ .AppRepository }}/config"
 )
 
 const NotFound = "user was not found"

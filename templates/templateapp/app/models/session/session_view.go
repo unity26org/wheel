@@ -7,11 +7,12 @@ var ViewContent = `package session
 import (
 	"bytes"
 	"html/template"
+	"path/filepath"
 	"{{ .AppRepository }}/app/entities"
 	"{{ .AppRepository }}/app/models/user"
 	"{{ .AppRepository }}/commons/app/view"
+	"{{ .AppRepository }}/commons/config"
 	"{{ .AppRepository }}/commons/log"
-	"{{ .AppRepository }}/config"
 )
 
 type SignInSuccess struct {
@@ -55,7 +56,7 @@ func SignUpMailer(currentUser *entities.User) string {
 
 	data := SignUpSuccess{UserFirstName: user.FirstName(currentUser), AppName: config.App.AppName}
 
-	tmpl, err := template.ParseFiles("./app/models/session/mailer/sign_up." + currentUser.Locale + ".html")
+	tmpl, err := template.ParseFiles(filepath.Join(".", "config", "mailers", "session", fileName, "sign_up." + currentUser.Locale + ".html"))
 	if err != nil {
 		log.Error.Println(err)
 	}
@@ -70,7 +71,7 @@ func PasswordRecoveryInstructionsMailer(currentUser *entities.User, token string
 
 	data := PasswordRecoveryInstructions{UserFirstName: user.FirstName(currentUser), LinkToPasswordRecovery: config.App.ResetPasswordUrl + "?token=" + token}
 
-	tmpl, err := template.ParseFiles("./app/models/session/mailer/password_recovery." + currentUser.Locale + ".html")
+	tmpl, err := template.ParseFiles(filepath.Join(".", "config", "mailers", "session", fileName, "password_recovery." + currentUser.Locale + ".html"))
 	if err != nil {
 		log.Error.Println(err)
 	}
