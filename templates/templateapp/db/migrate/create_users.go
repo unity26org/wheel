@@ -5,9 +5,9 @@ var UserPath = []string{"db", "migrate", "create_users.go"}
 var UserContent = `package migrate
 
 import (
+	"{{ .AppRepository }}/app/entities"
 	"{{ .AppRepository }}/commons/app/model"
 	"{{ .AppRepository }}/commons/crypto"
-	"{{ .AppRepository }}/db/entities"
 	"{{ .AppRepository }}/db/schema/data/col"
 )
 

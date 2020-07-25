@@ -1,6 +1,6 @@
 package usertemplate
 
-var ModelPath = []string{"app", "user", "user_model.go"}
+var ModelPath = []string{"app", "models", "user", "user_model.go"}
 
 var ModelContent = `package user
 
@@ -9,10 +9,10 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"{{ .AppRepository }}/app/entities"
 	"{{ .AppRepository }}/commons/app/model"
+	"{{ .AppRepository }}/commons/config"
 	"{{ .AppRepository }}/commons/crypto"
-	"{{ .AppRepository }}/config"
-	"{{ .AppRepository }}/db/entities"
 )
 
 const NotFound = "user was not found"

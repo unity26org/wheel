@@ -4,8 +4,8 @@ var ModelContent = `package {{ .EntityName.LowerCase }}
 
 import (
 	"errors"
+	"{{ .AppRepository }}/app/entities"
 	"{{ .AppRepository }}/commons/app/model"
-	"{{ .AppRepository }}/db/entities"
 )
 
 const NotFound = "{{ .EntityName.SnakeCase }} was not found"

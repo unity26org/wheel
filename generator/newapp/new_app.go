@@ -3,14 +3,15 @@ package newapp
 import (
 	"github.com/unity26org/wheel/generator/gencommon"
 	"github.com/unity26org/wheel/templates/templateapp"
+	"github.com/unity26org/wheel/templates/templateapp/app/entities"
 	"github.com/unity26org/wheel/templates/templateapp/app/handlers"
-	"github.com/unity26org/wheel/templates/templateapp/app/myself"
-	"github.com/unity26org/wheel/templates/templateapp/app/session"
-	"github.com/unity26org/wheel/templates/templateapp/app/session/sessionmailer"
-	"github.com/unity26org/wheel/templates/templateapp/app/usertemplate"
+	"github.com/unity26org/wheel/templates/templateapp/app/models/myself"
+	"github.com/unity26org/wheel/templates/templateapp/app/models/session"
+	"github.com/unity26org/wheel/templates/templateapp/app/models/usertemplate"
 	"github.com/unity26org/wheel/templates/templateapp/commons/app/handler"
 	"github.com/unity26org/wheel/templates/templateapp/commons/app/model"
 	"github.com/unity26org/wheel/templates/templateapp/commons/app/view"
+	configCommon "github.com/unity26org/wheel/templates/templateapp/commons/config"
 	"github.com/unity26org/wheel/templates/templateapp/commons/conversor"
 	"github.com/unity26org/wheel/templates/templateapp/commons/crypto"
 	"github.com/unity26org/wheel/templates/templateapp/commons/locale"
@@ -18,10 +19,11 @@ import (
 	"github.com/unity26org/wheel/templates/templateapp/commons/mailer"
 	"github.com/unity26org/wheel/templates/templateapp/config"
 	"github.com/unity26org/wheel/templates/templateapp/config/configlocales"
-	"github.com/unity26org/wheel/templates/templateapp/db/entities"
+	"github.com/unity26org/wheel/templates/templateapp/config/mailers/sessionmailer"
 	"github.com/unity26org/wheel/templates/templateapp/db/migrate"
 	"github.com/unity26org/wheel/templates/templateapp/db/migrate/adapter"
-	"github.com/unity26org/wheel/templates/templateapp/db/migrate/adapter/postgresql"
+	"github.com/unity26org/wheel/templates/templateapp/db/migrate/adapter/mysql"
+	"github.com/unity26org/wheel/templates/templateapp/db/migrate/adapter/postgres"
 	"github.com/unity26org/wheel/templates/templateapp/db/schema"
 	"github.com/unity26org/wheel/templates/templateapp/db/schema/data/col"
 	"github.com/unity26org/wheel/templates/templateapp/routes"
@@ -136,8 +138,13 @@ func generateCommmonsApp() error {
 }
 
 func generateCommonsOthers() error {
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(configCommon.Path), configCommon.Content, templateVar)
+	if err != nil {
+		return err
+	}
+
 	// COMMONS conversor
-	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(conversor.Path), conversor.Content, templateVar)
+	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(conversor.Path), conversor.Content, templateVar)
 	if err != nil {
 		return err
 	}
@@ -170,12 +177,7 @@ func generateCommonsOthers() error {
 }
 
 func generateConfig() error {
-	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.Path), config.Content, templateVar)
-	if err != nil {
-		return err
-	}
-
-	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.AppPath), config.AppContent, templateVar)
+	err := gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(config.AppPath), config.AppContent, templateVar)
 	if err != nil {
 		return err
 	}
@@ -241,9 +243,16 @@ func generateDb() error {
 		return err
 	}
 
-	err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(postgresql.Path), postgresql.Content, templateVar)
-	if err != nil {
-		return err
+	if templateVar.Database == "postgres" {
+		err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(postgres.Path), postgres.Content, templateVar)
+		if err != nil {
+			return err
+		}
+	} else if templateVar.Database == "mysql" {
+		err = gencommon.GeneratePathAndFileFromTemplateString(prependRootAppPathToPath(mysql.Path), mysql.Content, templateVar)
+		if err != nil {
+			return err
+		}
 	}
 
 	templateVar.MigrationMetadata = gencommon.MigrationMetadata{Type: "CREATE_TABLE", Name: "CreateUsers", Version: time.Now().Format("20060102150405")}
@@ -300,6 +309,7 @@ func Generate(options map[string]interface{}) error {
 	templateVar = gencommon.TemplateVar{
 		AppName:       options["app_name"].(string),
 		AppRepository: options["app_repository"].(string),
+		Database:      options["database"].(string),
 		SecretKey:     gencommon.SecureRandom(128),
 	}
 

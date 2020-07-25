@@ -8,6 +8,8 @@ import (
 	"github.com/unity26org/wheel/generator"
 	"github.com/unity26org/wheel/help"
 	"github.com/unity26org/wheel/version"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -24,7 +26,7 @@ func IsGoInstalled() bool {
 	return err == nil
 }
 
-func CheckDependences() error {
+func CheckDependences(database string) error {
 	var out bytes.Buffer
 	var hasDependence bool
 
@@ -40,7 +42,13 @@ func CheckDependences() error {
 
 	installedDependences := strings.Split(out.String(), "\n")
 
-	requiredDependences := []string{"github.com/jinzhu/gorm", "gopkg.in/yaml.v2", "github.com/gorilla/mux", "github.com/dgrijalva/jwt-go", "github.com/satori/go.uuid", "github.com/lib/pq", "golang.org/x/crypto/bcrypt", "github.com/adilsonchacon/sargo"}
+	requiredDependences := []string{"github.com/jinzhu/gorm", "gopkg.in/yaml.v2", "github.com/gorilla/mux", "github.com/dgrijalva/jwt-go", "github.com/satori/go.uuid", "golang.org/x/crypto/bcrypt", "github.com/adilsonchacon/sargo"}
+	if database == "postgres" {
+		requiredDependences = append(requiredDependences, "github.com/lib/pq")
+	} else if database == "mysql" {
+		requiredDependences = append(requiredDependences, "github.com/go-sql-driver/mysql")
+	}
+
 	for _, requiredDependence := range requiredDependences {
 		hasDependence = false
 		for _, installedDependence := range installedDependences {
@@ -68,12 +76,13 @@ func CheckDependences() error {
 	return nil
 }
 
-func optionsAreValid(args []string) bool {
-	b := true
+func checkGitIgnore(args []string) bool {
+	b := false
+	regexpSkipGit := regexp.MustCompile(`\A(\-G)|(\-\-skip\-git)\z`)
 
 	for index, value := range args {
-		if (index > 2) && (value != "-G" && value != "--skip-git") {
-			b = false
+		if index > 2 && regexpSkipGit.MatchString(value) {
+			b = true
 			break
 		}
 	}
@@ -81,39 +90,58 @@ func optionsAreValid(args []string) bool {
 	return b
 }
 
-func checkGitIgnore(args []string) bool {
-	b := true
+func checkDatabase(args []string) (string, error) {
+	database := ""
+	getNext := false
+	regexpDatabase := regexp.MustCompile(`\A(\-d)|(\-\-database)`)
+	regexpDatabaseAndEqual := regexp.MustCompile(`\A(\-d\=)|(\-\-database\=)`)
+	regexpDbAvailable := regexp.MustCompile(`(?i)\A(postgres)|(mysql)\z`)
 
 	for index, value := range args {
-		if index > 2 && value == "-G" || value == "--skip-git" {
-			b = false
-			break
+		if index > 2 {
+			if getNext {
+				database = value
+				break
+			} else if regexpDatabaseAndEqual.MatchString(value) {
+				database = regexpDatabaseAndEqual.ReplaceAllString(value, "")
+				break
+			} else if regexpDatabase.MatchString(value) {
+				getNext = true
+			}
 		}
 	}
 
-	return b
+	fmt.Println("Database:", database)
+
+	if !regexpDbAvailable.MatchString(database) {
+		return "", errors.New("invalid option. Run \"wheel --help\" for details")
+	} else {
+		return database, nil
+	}
 }
 
 func handleNewApp(args []string) error {
 	var options = make(map[string]interface{})
 
-	err := checkIsGoInstalled()
+	database, err := checkDatabase(args)
 	if err != nil {
 		return err
 	}
 
-	if !optionsAreValid(args) {
-		return errors.New("invalid option. Run \"wheel --help\" for details")
-	} else {
-		preOptions := strings.Split(os.Args[2], "/")
-
-		options["app_name"] = preOptions[len(preOptions)-1]
-		options["app_repository"] = os.Args[2]
-		options["git_ignore"] = checkGitIgnore(os.Args)
-
-		notify.Simpleln("Generating new app...")
-		return generator.NewApp(options)
+	err = checkIsGoInstalled(database)
+	if err != nil {
+		return err
 	}
+
+	preOptions := strings.Split(os.Args[2], "/")
+
+	options["app_name"] = preOptions[len(preOptions)-1]
+	options["app_repository"] = os.Args[2]
+	options["git_ignore"] = checkGitIgnore(os.Args)
+	options["database"] = database
+
+	notify.Simpleln("Generating new app...")
+	return generator.NewApp(options)
 }
 
 func isResourceNameValid(name string) bool {
@@ -203,9 +231,13 @@ func handleGenerateNewCrud(args []string, options map[string]bool) error {
 
 func handleGenerate(args []string) error {
 	var options map[string]bool
-	var err error
 
-	err = checkIsGoInstalled()
+	config, err := loadDatabaseConfigFile()
+	if err != nil {
+		return err
+	}
+
+	err = checkIsGoInstalled(config["database"])
 	if err != nil {
 		return err
 	}
@@ -226,13 +258,38 @@ func handleVersion() {
 	notify.Simpleln(version.Content)
 }
 
-func checkIsGoInstalled() error {
+func checkIsGoInstalled(database string) error {
 	if !IsGoInstalled() {
 		return errors.New("\"Go\" seems not installed")
 	} else {
 		notify.Simpleln("\"Go\" seems installed")
-		return CheckDependences()
+		return CheckDependences(database)
 	}
+}
+
+func loadDatabaseConfigFile() (map[string]string, error) {
+	config := make(map[string]string)
+
+	data, err := readDatabaseConfigFile()
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+func readDatabaseConfigFile() ([]byte, error) {
+	data, err := ioutil.ReadFile("./config/database.yml")
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return data, nil
 }
 
 func main() {

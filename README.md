@@ -175,9 +175,9 @@ It will output something like this:
 Checking dependences...
          ...
 Generating new CRUD...
-         created: app/post/post_model.go
-         created: app/post/post_view.go
-         created: db/entities/post_entity.go
+         created: app/entities/post_entity.go
+         created: app/models/post/post_model.go
+         created: app/models/post/post_view.go
          created: app/handlers/post_handler.go
          updated: routes/routes.go
          updated: db/schema/migrate.go

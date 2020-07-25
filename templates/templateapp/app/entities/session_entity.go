@@ -1,6 +1,6 @@
 package entities
 
-var SessionPath = []string{"db", "entities", "session_entity.go"}
+var SessionPath = []string{"app", "entities", "session_entity.go"}
 
 var SessionContent = `package entities
 

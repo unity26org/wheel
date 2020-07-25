@@ -5,8 +5,8 @@ var PaginationPath = []string{"commons", "app", "model", "pagination.go"}
 var PaginationContent = `package model
 
 import (
+	"{{ .AppRepository }}/commons/config"
   "{{ .AppRepository }}/commons/log"
-  "{{ .AppRepository }}/config"
 	"strconv"
 )
 
