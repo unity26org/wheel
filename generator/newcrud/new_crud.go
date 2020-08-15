@@ -149,6 +149,8 @@ func Generate(entityName string, columns []string, options map[string]bool) erro
 	} else if notSingleMigration(options) {
 		tEntityName = gencommon.SetEntityName(entityName)
 		tMigrationMetadata = gencommon.SetMigrationMetadata("Create" + tEntityName.CamelCasePlural)
+	} else {
+		tEntityName = gencommon.SetEntityName(entityName)
 	}
 
 	templateVar = gencommon.TemplateVar{

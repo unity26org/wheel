@@ -237,7 +237,7 @@ func handleGenerate(args []string) error {
 		return err
 	}
 
-	err = checkIsGoInstalled(config["database"])
+	err = checkIsGoInstalled(config["adapter"])
 	if err != nil {
 		return err
 	}
