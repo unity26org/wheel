@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/iancoleman/strcase"
 	"github.com/jinzhu/inflection"
 	"github.com/unity26org/wheel/commons/diff"
@@ -634,10 +633,6 @@ func extraSpecificationForDecimals(columnType string, extra string) (string, str
 			migrationExtras = append(migrationExtras, `"scale": `+subMatches[0][3])
 		}
 	}
-	fmt.Println(columnType)
-	fmt.Println(extra)
-	fmt.Println(subMatches)
-	fmt.Println(migrationExtras)
 
 	if len(migrationExtras) > 0 {
 		migrate = `map[string]interface{}{ ` + strings.Join(migrationExtras, ",") + `}`
